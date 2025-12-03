@@ -5,6 +5,7 @@ using StationControl.Models.Auth;
 using StationControl.Services.Auth;
 using StationControl.Services.Station;
 using StationControl.Services.Besoin;
+using StationControl.Services.Util;
 
 namespace StationControl.Areas.Observateur.Controllers
 {
@@ -27,22 +28,18 @@ namespace StationControl.Areas.Observateur.Controllers
             using var connection = new MySqlConnection(connectionString);
             connection.Open();
 
-            Utilisateur? utilisateur = AuthService.GetObservateurFromCookie(Request, connection);
+            var utilisateur = AuthService.GetObservateurFromCookie(Request, connection);
             if (utilisateur == null)
                 return RedirectToAction("Login", "Auth", new { area = "Observateur" });
 
-            ViewBag.Utilisateur = utilisateur;
             int stationId = utilisateur.StationId ?? 0;
 
-            var station = StationService.GetStationById(connection, stationId);
-            var capteursStation = StationService.GetCapteurByStation(connection, stationId);
-            var alimentationsStation = StationService.GetAlimentationByStation(connection, stationId);
-            var historiqueBesoins = BesoinService.GetHistoriqueBesoinsAnneeEnCours(connection, stationId);
-
-            ViewBag.Station = station;
-            ViewBag.CapteursStation = capteursStation;
-            ViewBag.AlimentationsStation = alimentationsStation;
-            ViewBag.HistoriqueBesoins = historiqueBesoins;
+            ViewBag.Station = StationService.GetStationById(connection, stationId);
+            ViewBag.CapteursStation = StationService.GetCapteurByStation(connection, stationId);
+            ViewBag.AlimentationsStation = StationService.GetAlimentationByStation(connection, stationId);
+            ViewBag.HistoriqueBesoins = BesoinService.GetHistoriqueBesoinsAnneeEnCours(connection, stationId);
+            ViewBag.KpiStation = KpiStationService.GetKpiStation(connection, stationId);
+            ViewBag.Utilisateur = utilisateur;
 
             return View();
         }
@@ -55,7 +52,7 @@ namespace StationControl.Areas.Observateur.Controllers
             using var connection = new MySqlConnection(connectionString);
             connection.Open();
 
-            Utilisateur? utilisateur = AuthService.GetObservateurFromCookie(Request, connection);
+            var utilisateur = AuthService.GetObservateurFromCookie(Request, connection);
             if (utilisateur == null)
                 return Unauthorized();
 
@@ -65,16 +62,17 @@ namespace StationControl.Areas.Observateur.Controllers
             var capteursStation = StationService.GetCapteurByStation(connection, stationId);
             var alimentationsStation = StationService.GetAlimentationByStation(connection, stationId);
             var historiqueBesoins = BesoinService.GetHistoriqueBesoinsAnneeEnCours(connection, stationId);
-
-            var options = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null };
+            var kpiStation = KpiStationService.GetKpiStation(connection, stationId);
 
             return new JsonResult(new
             {
                 Station = station,
                 CapteursStation = capteursStation,
                 AlimentationsStation = alimentationsStation,
-                HistoriqueBesoins = historiqueBesoins
-            }, options);
+                HistoriqueBesoins = historiqueBesoins,
+                KpiStation = kpiStation
+            });
         }
+
     }
 }

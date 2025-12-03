@@ -8,6 +8,7 @@
     var capteursStation = ViewBag.CapteursStation as List<CapteurStation> ?? new List<CapteurStation>();
     var alimentationsStation = ViewBag.AlimentationsStation as List<AlimentationStation> ?? new List<AlimentationStation>();
     var historique = ViewBag.HistoriqueBesoins as List<BesoinStation> ?? new List<BesoinStation>();
+    var kpiStation = ViewBag.KpiStation;
 
     int capteursFonctionnels = capteursStation.Count(c => c.Statut?.ToLower() == "fonctionnel");
     int alimentationsFonctionnelles = alimentationsStation.Count(a => a.Statut?.ToLower() == "fonctionnel");
@@ -29,7 +30,7 @@
 
 <div class="container-fluid py-4">
 
-    <!-- KPI -->
+    <!-- KPI Capteurs / Alimentations -->
     <div class="row mb-4">
         <div class="col-md-6 mb-3">
             <div class="card shadow-sm border-0 h-100 bg-white clickable-kpi" data-type="capteurs">
@@ -93,6 +94,34 @@
                             }
                         </li>
                     </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI MTBF / MTTR / Disponibilité -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm border border-info bg-transparent">
+                <div class="card-body text-center text-info">
+                    <h6>MTBF</h6>
+                    <h3 class="fw-bold">@((kpiStation?.MTBF ?? 0).ToString("0.##")) j</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm border border-warning bg-transparent">
+                <div class="card-body text-center text-warning">
+                    <h6>MTTR</h6>
+                    <h3 class="fw-bold">@((kpiStation?.MTTR ?? 0).ToString("0.##")) j</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm border border-success bg-transparent">
+                <div class="card-body text-center text-success">
+                    <h6>Taux de Disponibilité</h6>
+                    <h3 class="fw-bold">@((kpiStation?.TauxDisponibilite ?? 0).ToString("0.##")) %</h3>
                 </div>
             </div>
         </div>
@@ -171,7 +200,6 @@
     };
 }
 
-
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -184,14 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var map = L.map('map').setView([lat, lng], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    var marker = L.circleMarker(
-        [lat, lng], 
-        { 
-            color: '@(markerColor)', 
-            radius: 10 
-        }
-    ).addTo(map);
-
+    var marker = L.circleMarker([lat, lng], { color: '@(markerColor)', radius: 10 }).addTo(map);
 
     var capteurs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(capteursStation));
     var alimentations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(alimentationsStation));
@@ -254,7 +275,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     showSection(type, data);
                 }
 
-                // Map
                 if(data.Station?.Statut){
                     var color = data.Station.Statut.toLowerCase() === "fonctionnelle" ? "green" : "red";
                     marker.setStyle({ color: color });
