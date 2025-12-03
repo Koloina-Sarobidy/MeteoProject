@@ -1,0 +1,102 @@
+@model StationControl.Models.Intervention.PreventiveViewModel
+
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Planifier une intervention préventive";
+}
+
+<div class="container py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-calendar-check me-2"></i> Planifier une intervention
+            </h5>
+            <div>
+                <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="history.back()">
+                    <i class="bi bi-arrow-left me-1"></i> Retour
+                </button>
+                <a href="@Url.Action("Liste", "Preventive", new { area = "Observateur" })" class="btn btn-primary btn-sm">
+                    <i class="bi bi-list-ul me-1"></i> Voir la liste
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle me-1"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <form id="preventiveForm" method="post">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Utilisateur effectif (optionnel)</label>
+                    <select class="form-select" name="UtilisateurEffectifId">
+                        <option value="">-- Sélectionner --</option>
+                        @foreach(var u in Model.Effectifs)
+                        {
+                            <option value="@u.Id">@u.Nom @u.Prenom</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Date prévue début</label>
+                    <input type="date" class="form-control" name="DatePrevueDebut" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Date prévue fin (optionnelle)</label>
+                    <input type="date" class="form-control" name="DatePrevueFin" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Description</label>
+                    <textarea class="form-control" name="Description" rows="3"></textarea>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                        <i class="bi bi-check-circle me-1"></i> Planifier
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary"><i class="bi bi-exclamation-triangle me-1"></i> Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Voulez-vous vraiment planifier cette intervention préventive ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Annuler
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmSubmit">
+                    <i class="bi bi-check-circle me-1"></i> Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("confirmSubmit").addEventListener("click", function () {
+            document.getElementById("preventiveForm").submit();
+        });
+    </script>
+}

@@ -1,0 +1,178 @@
+@using Microsoft.AspNetCore.Mvc.ModelBinding 
+@using StationControl.Models.Crm
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Ajout Station";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-plus-circle"></i> Nouvelle Station
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <form id="stationForm" method="post" action="@Url.Action("Insert", "Station", new { area = "SuperAdmin" })">
+                
+                <!-- Libellé et Date Début -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="libelle" class="form-label fw-semibold">Libellé</label>
+                        <input type="text" class="form-control" id="libelle" name="Libelle"
+                               placeholder="Ex: Station Antananarivo" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dateDebut" class="form-label fw-semibold">Date de début</label>
+                        <input type="date" class="form-control" id="dateDebut" name="DateDebut" required>
+                    </div>
+                </div>
+
+                <!-- Latitude et Longitude -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="latitude" class="form-label fw-semibold">Latitude</label>
+                        <input type="text" class="form-control" id="latitude" name="Latitude" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="longitude" class="form-label fw-semibold">Longitude</label>
+                        <input type="text" class="form-control" id="longitude" name="Longitude" required>
+                    </div>
+                </div>
+
+                <!-- CRM -->
+                <div class="mb-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <label class="form-label fw-semibold">CRM</label>
+                        <div class="row">
+                            @foreach (var crm in ViewBag.Crms as List<Crm>)
+                            {
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="CrmId"
+                                               value="@crm.Id" id="crm_@crm.Id" required>
+                                        <label class="form-check-label" for="crm_@crm.Id">@crm.Libelle</label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="ms-3 d-flex align-items-end">
+                        <a href="@Url.Action("Ajout", "Crm", new { area = "SuperAdmin" })" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Autres
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Brand -->
+                <div class="mb-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <label class="form-label fw-semibold">Brand</label>
+                        <div class="row">
+                            @foreach (var brand in ViewBag.Brands as List<Brand>)
+                            {
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="BrandId"
+                                               value="@brand.Id" id="brand_@brand.Id" required>
+                                        <label class="form-check-label" for="brand_@brand.Id">@brand.Nom</label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="ms-3 d-flex align-items-end">
+                        <a href="@Url.Action("Liste", "Brand", new { area = "SuperAdmin" })" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Autres
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Region -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Region</label>
+                    <div class="row">
+                        @foreach (var region in ViewBag.Regions as List<StationControl.Models.Crm.Region>)
+                        {
+                            <div class="col-md-4 col-sm-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="RegionId"
+                                           value="@region.Id" id="region_@region.Id" required>
+                                    <label class="form-check-label" for="region_@region.Id">@region.Libelle</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Type de Station -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Type de Station</label>
+                    <div class="row">
+                        @foreach (var typeStation in ViewBag.TypeStations as List<TypeStation>)
+                        {
+                            <div class="col-md-4 col-sm-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="TypeStationId"
+                                           value="@typeStation.Id" id="typeStation_@typeStation.Id" required>
+                                    <label class="form-check-label" for="typeStation_@typeStation.Id">@typeStation.Libelle</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="text-end">
+                    <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                        <i class="bi bi-arrow-left"></i> Retour
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                        <i class="bi bi-check-circle"></i> Valider
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title" id="confirmModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmation
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p>Souhaitez-vous vraiment enregistrer cette Station ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                <button type="submit" form="stationForm" class="btn btn-primary"><i class="bi bi-check-circle"></i> Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("dateDebut").value = today;
+
+    document.getElementById("stationForm").addEventListener("submit", function() {
+        const latInput = document.getElementById("latitude");
+        const lonInput = document.getElementById("longitude");
+
+        latInput.value = latInput.value.replace(',', '.');
+        lonInput.value = lonInput.value.replace(',', '.');
+    });
+});
+</script>
+}

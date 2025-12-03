@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Observateur</title>
+
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/css/layout.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="~/img/Logo.png" />
+
+    <style>
+        /* --- Style notifications inventaire --- */
+
+        #inventaire-notif-btn {
+            position: relative;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #555;
+        }
+
+        #inventaire-badge {
+            position: absolute;
+            top: -4px;
+            right: -6px;
+            background: red;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            display: none;
+        }
+
+        #inventaire-panel {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 10px;
+            display: none;
+            z-index: 99999;
+        }
+
+        #inventaire-panel ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR ======================================================= -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="sidebar-brand">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>StationControl</span>
+            </a>
+        </div>
+
+        <nav class="nav-section">
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="@Url.Action("Dashboard","Dashboard", new {area="Observateur"})" class="nav-link active">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#capteurMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-cpu-fill"></i> Equipements
+                    </a>
+                    <ul class="collapse submenu" id="capteurMenu">
+                        <li><a href="@Url.Action("Capteurs","Station", new {area="Observateur"})" class="nav-link">Capteurs</a></li>
+                        <li><a href="@Url.Action("Alimentations","Station", new {area="Observateur"})" class="nav-link">Alimentations</a></li>
+                        <li><a href="@Url.Action("Inventaire","Inventaire", new {area="Observateur"})" class="nav-link">Inventaires</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#interventionsMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-tools"></i> Interventions
+                    </a>
+                    <ul class="collapse submenu" id="interventionsMenu">
+                        <li><a href="@Url.Action("Planifier","Preventive", new {area="Observateur"})" class="nav-link">Préventives</a></li>
+                        <li><a href="@Url.Action("Liste","Curative", new {area="Observateur"})" class="nav-link">Curatives</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#personnelMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-people"></i> Personnel
+                    </a>
+                    <ul class="collapse submenu" id="personnelMenu">
+                        <li><a href="@Url.Action("Inscription","Personnel", new {area="Observateur"})" class="nav-link">Inscription</a></li>
+                    </ul>
+                    <ul class="collapse submenu" id="personnelMenu">
+                        <li><a href="@Url.Action("Liste","Personnel", new {area="Observateur"})" class="nav-link">Liste</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="@Url.Action("RapportMensuelStation","Rapport", new {area="Observateur"})" class="nav-link">
+                        <i class="bi bi-file-earmark-text"></i> Rapports
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="@Url.Action("Create","Ticket", new {area="Observateur"})" class="nav-link">
+                        <i class="bi bi-chat-dots"></i> Ticket
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- MAIN CONTENT ================================================== -->
+    <main class="main-content">
+        <header class="header d-flex justify-content-between align-items-center">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <div class="header-actions d-flex align-items-center">
+
+                <!-- ====== ICON NOTIFICATIONS TICKET ====== -->
+                <a href="/Observateur/Ticket/ListeTicket" class="icon-btn text-decoration-none">
+                    <i class="bi bi-chat-dots"></i>
+                    <span 
+                        id="badge-notification" 
+                        class="badge-notification"
+                        data-stationid="@ViewBag.Utilisateur?.StationId"
+                        @await Component.InvokeAsync("Notifications", new { stationId = ViewBag.Utilisateur.StationId })
+                    ></span>
+                </a>
+
+                <!-- ===== ICON NOTIFICATIONS INVENTAIRE ===== -->
+                <div class="position-relative ms-3">
+                    <i id="inventaire-notif-btn" class="bi bi-bell"></i>
+                    <span id="inventaire-badge"></span>
+
+                    <div id="inventaire-panel">
+                        <strong>Notifications</strong>
+                        <hr>
+                        <div id="inventaire-content">Chargement...</div>
+                    </div>
+                </div>
+
+                <!-- ===== USER PROFILE ===== -->
+                <div class="dropdown user-profile ms-3">
+                    <a class="d-flex align-items-center text-decoration-none" href="#" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        @if(ViewBag.Utilisateur != null && !string.IsNullOrEmpty(ViewBag.Utilisateur.PhotoProfil)){
+                            <img src="~/uploads/profiles/@ViewBag.Utilisateur.PhotoProfil" class="user-avatar rounded-circle me-2" />
+                        } else if(ViewBag.Utilisateur != null){
+                            <img src="https://ui-avatars.com/api/?name=@ViewBag.Utilisateur.Nom+@ViewBag.Utilisateur.Prenom&background=008B8B&color=fff"
+                                 class="user-avatar rounded-circle me-2" />
+                        }
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        @if(ViewBag.Utilisateur != null){
+                            <li><a class="dropdown-item disabled" href="#"><i class="bi bi-person-fill me-2"></i> @ViewBag.Utilisateur.Nom @ViewBag.Utilisateur.Prenom (@ViewBag.Utilisateur.Role?.Libelle)</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Profile", "Auth", new { area = "Observateur" })"><i class="bi bi-person-fill me-2"></i> Informations personnelles</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("HistoriqueConnexion", "Auth", new { area = "Observateur" })"><i class="bi bi-clock-history me-2"></i> Historique de connexion</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("RedirectStatut", "Utilisateur", new { area = "Observateur" })"><i class="bi bi-person-gear me-2"></i> Statut</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a href="#" class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="bi bi-box-arrow-right me-2"></i> Se déconnecter</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- LOGOUT MODAL -->
+        <div class="modal fade" id="logoutModal">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary"><i class="bi bi-exclamation-triangle me-2"></i> Confirmation</h5>
+                        <button class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">Voulez-vous vraiment vous déconnecter ?</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <a href="@Url.Action("Logout","Auth", new {area="Observateur"})" class="btn btn-primary">Déconnexion</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @RenderSection("Modals", required: false)
+        <div class="dashboard-content">@RenderBody()</div>
+    </main>
+
+    <!-- =================== SCRIPTS =================== -->
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // MENU MOBILE
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+
+        menuToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("show");
+            overlay.classList.toggle("show");
+        });
+        overlay.addEventListener("click", () => {
+            sidebar.classList.remove("show");
+            overlay.classList.remove("show");
+        });
+
+        // ================= NOTIFICATIONS TICKETS ==================
+        function updateNotifications() {
+            const badge = document.getElementById("badge-notification");
+            const stationId = badge.getAttribute("data-stationid");
+
+            fetch(`/StationControl/Notification/Count?stationId=${stationId}`)
+                .then(r => r.text())
+                .then(count => badge.textContent = count);
+        }
+        setInterval(updateNotifications, 10000);
+        updateNotifications();
+
+
+        // ================= NOTIFICATIONS INVENTAIRE / PREVENTIVE / INTERVENTION ==================
+        const notifBtn = document.getElementById("inventaire-notif-btn");
+        const notifPanel = document.getElementById("inventaire-panel");
+        const notifBadge = document.getElementById("inventaire-badge");
+        const notifContent = document.getElementById("inventaire-content");
+
+        notifBtn.addEventListener("click", () => {
+            notifPanel.style.display = notifPanel.style.display === "block" ? "none" : "block";
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!notifPanel.contains(e.target) && !notifBtn.contains(e.target)) {
+                notifPanel.style.display = "none";
+            }
+        });
+
+        async function loadInventaireNotifications() {
+            try {
+                const response = await fetch("/Observateur/Notifications/InventaireNotifications");
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    notifBadge.style.display = "none";
+                    notifContent.innerHTML = "<em>Aucune notification</em>";
+                    return;
+                }
+
+                notifBadge.style.display = "inline-block";
+                notifBadge.textContent = data.length;
+
+                notifContent.innerHTML = "<ul>" + data.map(n => `<li>${n.message}</li>`).join('') + "</ul>";
+
+            } catch {
+                notifContent.innerHTML = "<em>Erreur lors du chargement</em>";
+            }
+        }
+
+        loadInventaireNotifications();
+        setInterval(loadInventaireNotifications, 30000);
+    </script>
+
+    @RenderSection("Scripts", required: false)
+    @RenderSection("Styles", required: false)
+
+</body>
+</html>

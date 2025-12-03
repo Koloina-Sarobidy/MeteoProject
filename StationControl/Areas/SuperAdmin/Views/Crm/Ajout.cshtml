@@ -1,0 +1,62 @@
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Ajout CRM";
+}
+
+<div class="container-fluid py-4"> 
+    <div class="card shadow-sm border-0"> 
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-plus-circle"></i> Nouveau CRM
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+        <div class="card-body">
+            <form id="crmForm" method="post" action="@Url.Action("Insert", "Crm", new { area = "SuperAdmin" })">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="libelle" class="form-label fw-semibold">Désignation</label>
+                        <input type="text" class="form-control" id="libelle" name="libelle"
+                               placeholder="Ex: CRM Antalaha" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dateDebut" class="form-label fw-semibold">Date de début</label>
+                        <input type="date" class="form-control" id="dateDebut" name="dateDebut"
+                               value="@DateTime.Now.ToString("yyyy-MM-dd")" required>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                        <i class="bi bi-save"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary" id="confirmModalLabel"><i class="bi bi-exclamation-triangle"></i> Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p>Souhaitez-vous vraiment enregistrer ce CRM ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </button>
+                <button type="submit" form="crmForm" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

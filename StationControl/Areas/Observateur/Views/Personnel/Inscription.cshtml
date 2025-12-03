@@ -1,0 +1,180 @@
+@model StationControl.Models.Personnel.DemandesInscriptionViewModel
+
+@{
+Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+ViewData["Title"] = "Demandes d'inscription non validées";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+
+<div class="container-fluid py-4">
+<!-- ============================================================ -->
+<!-- ============   DEMANDES OBSERVATEURS NON VALIDÉS   ========= -->
+<!-- ============================================================ -->
+<div class="card shadow-sm border-0 mb-4">
+	<div class="card-header bg-white d-flex justify-content-between align-items-center">
+		<h5 class="mb-0 text-primary">
+			<i class="bi bi-eye"></i> Demandes Observateur non validées
+		</h5>
+	</div>
+	<div class="card-body">
+
+		<div class="table-responsive">
+			<table class="table table-hover table-sm align-middle">
+				<thead class="table-light">
+					<tr>
+						<th>Photo</th>
+						<th>Nom & Prénom</th>
+						<th>Email</th>
+						<th>Genre</th>
+						<th>Station</th>
+						<th>Date d'inscription</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					@if (Model.DemandesObservateurs.Any())
+					{
+						foreach (var demande in Model.DemandesObservateurs)
+						{
+							<tr>
+								<td>
+									@if (!string.IsNullOrEmpty(demande.PhotoProfil))
+									{
+										<img src="~/uploads/profiles/@demande.PhotoProfil" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" />
+									}
+									else
+									{
+										<i class="bi bi-person-circle" style="font-size:2rem;color:#aaa"></i>
+									}
+								</td>
+								<td>@demande.Nom @demande.Prenom</td>
+								<td>@demande.Email</td>
+								<td>@demande.Genre</td>
+								<td>@Model.Stations.GetValueOrDefault(demande.StationId ?? -1, "-")</td>
+								<td>@demande.DateDebut.ToString("dd/MM/yyyy")</td>
+								<td>
+									<button class="btn btn-sm btn-success w-100 mb-1"
+											data-bs-toggle="modal"
+											data-bs-target="#modalValider"
+											data-id="@demande.Id"
+											data-nom="@demande.Nom @demande.Prenom">
+										<i class="bi bi-check-circle"></i> Valider
+									</button>
+
+									<button class="btn btn-sm btn-danger w-100"
+											data-bs-toggle="modal"
+											data-bs-target="#modalSupprimer"
+											data-id="@demande.Id"
+											data-nom="@demande.Nom @demande.Prenom">
+										<i class="bi bi-x-circle"></i> Supprimer
+									</button>
+								</td>
+							</tr>
+						}
+					}
+					else
+					{
+						<tr>
+							<td colspan="7" class="text-center text-muted">
+								Aucune demande Observateur non validée
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+</div>
+
+<!-- =====================   MODAL VALIDER   ===================== -->
+
+<div class="modal fade" id="modalValider" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<form method="post" action="@Url.Action("Valider", "Personnel", new { area = "Observateur" })">
+				<div class="modal-header">
+					<h5 class="modal-title text-primary"><i class="bi bi-exclamation-triangle"></i> Confirmer la validation</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<p id="modalValiderTexte"></p>
+					<input type="hidden" name="id" id="modalValiderId" />
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+					<button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Valider</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+<!-- =====================   MODAL SUPPRIMER  ===================== -->
+
+<div class="modal fade" id="modalSupprimer" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<form method="post" action="@Url.Action("Supprimer", "Personnel", new { area = "Observateur" })">
+				<div class="modal-header">
+					<h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle"></i> Supprimer la demande ?</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<p id="modalSupprimerTexte"></p>
+					<input type="hidden" name="id" id="modalSupprimerId" />
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+					<button type="submit" class="btn btn-danger"><i class="bi bi-check-circle"></i> Supprimer</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+@section Scripts {
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+	// ==================== VALIDER ====================
+	document.querySelectorAll('[data-bs-target="#modalValider"]').forEach(btn => {
+		btn.addEventListener("click", function () {
+			document.getElementById("modalValiderId").value = this.dataset.id;
+			document.getElementById("modalValiderTexte").innerText =
+				`Voulez-vous valider la demande de ${this.dataset.nom} ?`;
+		});
+	});
+
+	// ==================== SUPPRIMER ====================
+	document.querySelectorAll('[data-bs-target="#modalSupprimer"]').forEach(btn => {
+		btn.addEventListener("click", function () {
+			document.getElementById("modalSupprimerId").value = this.dataset.id;
+			document.getElementById("modalSupprimerTexte").innerText =
+				`Voulez-vous supprimer définitivement la demande de ${this.dataset.nom} ?`;
+		});
+	});
+
+});
+</script>
+
+}

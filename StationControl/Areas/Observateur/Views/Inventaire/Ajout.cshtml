@@ -1,0 +1,298 @@
+@using StationControl.Models.Besoin
+@using StationControl.Models.Station
+@using StationControl.Models.Equipement
+@using StationControl.Models.Inventaire
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Inventaire de la station";
+
+    var station = ViewBag.Station as Station;
+    var capteursStation = ViewBag.CapteursStation as List<CapteurStation> ?? new List<CapteurStation>();
+    var alimentationsStation = ViewBag.AlimentationsStation as List<AlimentationStation> ?? new List<AlimentationStation>();
+    var equipementsBesoin = ViewBag.EquipementsBesoin as List<EquipementBesoin> ?? new List<EquipementBesoin>();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="container py-4">
+    <div class="p-4 bg-white shadow-sm rounded">
+
+        <h4 class="text-primary mb-4"><i class="bi bi-card-checklist"></i> Inventaire de la station @station?.Nom</h4>
+        <form id="inventaireForm" method="post" action="@Url.Action("EnregistrerInventaire","Inventaire", new { area="Observateur" })">
+            <input type="hidden" name="StationId" value="@station?.Id" />
+            <input type="hidden" name="UtilisateurId" value="@ViewBag.UtilisateurId" />
+
+            <!-- Commentaire global -->
+            <div class="mb-3">
+                <label for="commentaireGlobal" class="form-label">Commentaire général de l'inventaire</label>
+                <textarea id="commentaireGlobal" class="form-control" rows="2" placeholder="Commentaire général de l'inventaire"></textarea>
+            </div>
+
+            <!-- Capteurs -->
+            <h5 class="mt-3">Capteurs</h5>
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Numéro de série</th>
+                        <th>Type</th>
+                        <th>Fonctionnel</th>
+                        <th>Besoin</th>
+                        <th>Description problème</th>
+                        <th>Prédiction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var c in capteursStation)
+                    {
+                        <tr data-equipement-id="@c.Id">
+                            <td>@c.NumSerie</td>
+                            <td>@c.Capteur?.Libelle</td>
+                            <td>
+                                <input type="checkbox" class="estFonctionnelCheckbox" checked />
+                            </td>
+                            <td>
+                                <select class="form-select besoinSelectInput mt-1 d-none">
+                                    <option value="">-- Sélectionnez un besoin --</option>
+                                    @foreach(var b in equipementsBesoin)
+                                    {
+                                        <option value="@b.Id">@b.Libelle</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <textarea class="form-control problemeInput mt-1 d-none" placeholder="Décrire le problème..."></textarea>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary voirPredictionBtn">Voir Prédiction</button>
+                            </td>
+                        </tr>
+                        <tr class="predictionRow d-none">
+                            <td colspan="6">
+                                <div class="predictionContent">Chargement...</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Alimentations -->
+            <h5 class="mt-3">Alimentations</h5>
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Numéro de série</th>
+                        <th>Type</th>
+                        <th>Fonctionnel</th>
+                        <th>Besoin</th>
+                        <th>Description problème</th>
+                        <th>Prédiction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var a in alimentationsStation)
+                    {
+                        <tr data-equipement-id="@a.Id">
+                            <td>@a.NumSerie</td>
+                            <td>@a.Alimentation?.Libelle</td>
+                            <td>
+                                <input type="checkbox" class="estFonctionnelCheckbox" checked />
+                            </td>
+                            <td>
+                                <select class="form-select besoinSelectInput mt-1 d-none">
+                                    <option value="">-- Sélectionnez un besoin --</option>
+                                    @foreach(var b in equipementsBesoin)
+                                    {
+                                        <option value="@b.Id">@b.Libelle</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <textarea class="form-control problemeInput mt-1 d-none" placeholder="Décrire le problème..."></textarea>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary voirPredictionBtn">Voir Prédiction</button>
+                            </td>
+                        </tr>
+                        <tr class="predictionRow d-none">
+                            <td colspan="6">
+                                <div class="predictionContent">Chargement...</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </button>
+
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmSaveModal">
+                    <i class="bi bi-save"></i> Sauvegarder l'inventaire
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+       <div class="modal-header">
+            <h5 class="modal-title text-primary"><i class="bi bi-exclamation-triangle"></i> Confirmer la sauvegarde</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+      <div class="modal-body">
+        Êtes-vous sûr de vouloir sauvegarder l'inventaire de la station ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+        <button type="button" class="btn btn-primary" id="confirmSaveBtn"><i class="bi bi-check-circle"></i> Sauvegarder</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // Checkbox comportement
+    document.querySelectorAll(".estFonctionnelCheckbox").forEach(function(checkbox) {
+        checkbox.addEventListener("change", function() {
+            const row = this.closest("tr");
+            const selectInput = row.querySelector(".besoinSelectInput");
+            const problemeInput = row.querySelector(".problemeInput");
+            if(this.checked){
+                selectInput.value = "";
+                selectInput.classList.add("d-none");
+                problemeInput.value = "";
+                problemeInput.classList.add("d-none");
+            } else {
+                selectInput.classList.remove("d-none");
+                problemeInput.classList.remove("d-none");
+            }
+        });
+    });
+
+    // Bouton prédiction
+    document.querySelectorAll(".voirPredictionBtn").forEach(btn => {
+        btn.addEventListener("click", async function() {
+            const row = this.closest("tr");
+            const nextRow = row.nextElementSibling;
+            const contentDiv = nextRow.querySelector(".predictionContent");
+            const equipementId = row.dataset.equipementId;
+
+            if(nextRow.classList.contains("d-none")) {
+                nextRow.classList.remove("d-none");
+                contentDiv.innerHTML = "Chargement...";
+
+                try {
+                    const response = await fetch(`@Url.Action("GetPrediction", "Inventaire", new { area="Observateur" })?equipementStationId=${equipementId}`);
+                    const data = await response.json();
+
+                    if(data && data.ParType && data.ParType.length > 0){
+                        let html = "<ul class='list-group'>";
+                        data.ParType.forEach(p => {
+                            html += `<li class='list-group-item'>
+                                <strong>${p.EquipementBesoinLibelle}</strong> : prochaine occurrence le <em>${new Date(p.DateProchaineOccurrence).toLocaleDateString()}</em>
+                                ${p.AUtiliseFallback ? "<span class='badge bg-warning ms-2'>Fallback</span>" : ""}
+                            </li>`;
+                        });
+                        html += "</ul>";
+                        contentDiv.innerHTML = html;
+                    } else {
+                        contentDiv.innerHTML = "<em>Aucune prédiction disponible</em>";
+                    }
+
+                } catch(err) {
+                    console.error(err);
+                    contentDiv.innerHTML = "<em>Erreur lors du chargement de la prédiction</em>";
+                }
+
+            } else {
+                nextRow.classList.add("d-none");
+            }
+        });
+    });
+
+    // Sauvegarde inventaire
+    document.getElementById("confirmSaveBtn").addEventListener("click", function() {
+
+        const commentaireGlobal = document.getElementById("commentaireGlobal").value;
+        const form = document.getElementById("inventaireForm");
+
+        document.querySelectorAll(".dynamicInput").forEach(el => el.remove());
+
+        const inputCommentaire = document.createElement("input");
+        inputCommentaire.type = "hidden";
+        inputCommentaire.name = "Commentaire";
+        inputCommentaire.value = commentaireGlobal;
+        inputCommentaire.classList.add("dynamicInput");
+        form.appendChild(inputCommentaire);
+
+        // 🔧 FIX : empêcher l’insertion d’un seul inventaire
+        let detailIndex = 0;
+
+        document.querySelectorAll("tbody tr").forEach(function(row){
+
+            const equipementId = row.dataset.equipementId;
+
+            // Ignorer les lignes de prédiction
+            if (!equipementId) return;
+
+            const estFonctionnel = row.querySelector(".estFonctionnelCheckbox").checked;
+            const besoinId = row.querySelector(".besoinSelectInput")?.value;
+            const descriptionProbleme = row.querySelector(".problemeInput")?.value;
+
+            const inputEquip = document.createElement("input");
+            inputEquip.type = "hidden";
+            inputEquip.name = `Details[${detailIndex}].EquipementStationId`;
+            inputEquip.value = equipementId;
+            inputEquip.classList.add("dynamicInput");
+            form.appendChild(inputEquip);
+
+            const inputFonctionnel = document.createElement("input");
+            inputFonctionnel.type = "hidden";
+            inputFonctionnel.name = `Details[${detailIndex}].EstFonctionnel`;
+            inputFonctionnel.value = estFonctionnel;
+            inputFonctionnel.classList.add("dynamicInput");
+            form.appendChild(inputFonctionnel);
+
+            if(!estFonctionnel){
+                const inputBesoinId = document.createElement("input");
+                inputBesoinId.type = "hidden";
+                inputBesoinId.name = `Details[${detailIndex}].BesoinStation.EquipementBesoin.Id`;
+                inputBesoinId.value = besoinId;
+                inputBesoinId.classList.add("dynamicInput");
+                form.appendChild(inputBesoinId);
+
+                const inputProbleme = document.createElement("input");
+                inputProbleme.type = "hidden";
+                inputProbleme.name = `Details[${detailIndex}].BesoinStation.DescriptionProbleme`;
+                inputProbleme.value = descriptionProbleme;
+                inputProbleme.classList.add("dynamicInput");
+                form.appendChild(inputProbleme);
+            }
+
+            detailIndex++; 
+        });
+
+        form.submit();
+    });
+
+});
+</script>
+}

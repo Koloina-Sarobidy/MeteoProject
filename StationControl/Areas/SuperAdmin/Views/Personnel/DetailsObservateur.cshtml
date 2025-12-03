@@ -1,0 +1,113 @@
+@model StationControl.Models.Auth.Utilisateur
+
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Détails de l'Observateur";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+
+        <!-- Header -->
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-person-badge me-2"></i> Détails de l'Observateur
+            </h5>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <!-- PHOTO + NOM -->
+                <div class="col-xl-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body pt-4 d-flex flex-column align-items-center">
+
+                            <img src="@(!string.IsNullOrEmpty(Model.PhotoProfil) 
+                                    ? Url.Content($"~/uploads/profiles/{Model.PhotoProfil}") 
+                                    : $"https://ui-avatars.com/api/?name={Model.Prenom}+{Model.Nom}&background=008B8B&color=fff")"
+                                 class="rounded-circle mb-3"
+                                 style="width:150px; height:150px; object-fit:cover; border:2px solid #ddd;" />
+
+                            <h4>@Model.Nom @Model.Prenom</h4>
+                            <h5 class="text-muted">@Model.Role?.Libelle</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INFOS -->
+                <div class="col-xl-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body pt-3">
+
+                            <h5 class="card-title text-primary">
+                                <i class="bi bi-info-circle me-2"></i> Informations personnelles
+                            </h5>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Nom :</div>
+                                <div class="col-md-8">@Model.Nom</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Prénom :</div>
+                                <div class="col-md-8">@Model.Prenom</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Email :</div>
+                                <div class="col-md-8">@Model.Email</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Genre :</div>
+                                <div class="col-md-8">@Model.Genre</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Statut :</div>
+                                <div class="col-md-8">
+                                    @if (Model.Statut == "Actif")
+                                    {
+                                        <span class="badge bg-success">Actif</span>
+                                    }
+                                    else if (Model.Statut == "Congé")
+                                    {
+                                        <span class="badge bg-warning">@Model.Statut</span> 
+                                        <div class="small text-muted">Du : @ViewBag.Statut.DateDebut.ToString("dd/MM/yyyy") au @ViewBag.Statut.DateFin.ToString("dd/MM/yyyy")</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@Model.Statut</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Date d'entrée :</div>
+                                <div class="col-md-8">@Model.DateDebut.ToString("dd/MM/yyyy")</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4 fw-semibold">Station :</div>
+                                <div class="col-md-8">@ViewBag.Station.Nom</div>
+                            </div>
+
+                            @if (Model.DateFin != null)
+                            {
+                                <div class="row mb-3">
+                                    <div class="col-md-4 fw-semibold">Date fin :</div>
+                                    <div class="col-md-8">@Model.DateFin?.ToString("dd/MM/yyyy")</div>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- card-body -->
+    </div> <!-- card -->
+</div> <!-- container -->

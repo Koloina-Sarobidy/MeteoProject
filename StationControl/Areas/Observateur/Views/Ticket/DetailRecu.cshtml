@@ -1,0 +1,155 @@
+@model StationControl.Models.Ticket.TicketListItem
+@using StationControl.Models.Crm
+@using StationControl.Models.Station
+
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Détails du Ticket";
+
+    var crms = Model.CrmDestinataire ?? new List<Crm>();
+    var stations = Model.StationDestinataire ?? new List<Station>();
+    var stationEx = Model.Station;
+    var crmEx = Model.Crm;
+    var piecesJointes = ViewBag.PiecesJointes as List<StationControl.Models.Ticket.TicketPieceJointe> ?? new List<StationControl.Models.Ticket.TicketPieceJointe>();
+    var vues = ViewBag.Vues as List<StationControl.Models.Ticket.TicketVue> ?? new List<StationControl.Models.Ticket.TicketVue>();
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-chat-dots me-2"></i> Détails du Ticket
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Objet du ticket -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Objet du ticket</label>
+                <input type="text" class="form-control" value="@Model.Objet" readonly />
+            </div>
+
+            <!-- Message -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Message</label>
+                <textarea class="form-control" rows="4" readonly>@Model.Description</textarea>
+            </div>
+
+            <!-- Expéditeur -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">Expéditeur</label>
+                <div>
+                    @if (crmEx != null)
+                    {
+                        <span class="badge bg-success fs-6 p-2">@crmEx.Libelle</span>
+                    }
+                    else if (stationEx != null)
+                    {
+                        <span class="badge bg-success fs-6 p-2">@stationEx.Nom</span>
+                    }
+                    else if (Model.SuperAdmin == true)
+                    {
+                        <span class="badge bg-dark fs-6 p-2">Chef SMIT</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Pièces jointes -->
+            @if (piecesJointes.Any())
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Pièces jointes</label>
+                    <div>
+                        @foreach (var piece in piecesJointes)
+                        {
+                            <a href="@Url.Action("Download", "Ticket", new { fileName = piece.Url })" class="d-block mb-1">
+                                <i class="bi bi-paperclip me-1"></i> @piece.Url
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Destinataires CRM -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Destinataires CRM</label>
+                <div>
+                    @if (crms.Any())
+                    {
+                        @foreach (var crm in crms)
+                        {
+                            <span class="badge bg-primary me-1">@crm.Libelle</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucun CRM</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Destinataires Stations -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Destinataires Station</label>
+                <div>
+                    @if (stations.Any())
+                    {
+                        @foreach (var station in stations)
+                        {
+                            <span class="badge bg-info text-dark me-1">@station.Nom</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucune station</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Destinataires SuperAdmin -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Autres destinataires</label>
+                <div>
+                    @if (Model.SuperAdminDestinataire == true)
+                    {
+                        <span class="badge bg-dark me-1">Chef SMIT</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucun</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Visibilités -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Visibilités</label>
+                <div>
+                    @if (vues.Any())
+                    {
+                        foreach (var vue in vues)
+                        {
+                            var destinataire = vue.CrmId != null      ? vue.CrmId.Libelle :
+                                               vue.StationId != null  ? vue.StationId.Nom :
+                                               "Chef SMIT";
+
+                            var statut = vue.DateVue != DateTime.MinValue ? "Oui" : "Non";
+                            var badgeClass = statut == "Oui" ? "bg-success" : "bg-warning text-dark";
+
+                            <span class="badge @badgeClass me-1">@destinataire : @statut</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucun destinataire</span>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

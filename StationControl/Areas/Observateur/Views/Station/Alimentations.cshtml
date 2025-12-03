@@ -1,0 +1,124 @@
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Alimentations de la station";
+
+    var station = ViewBag.Station as Station;
+    var alimentationsStation = ViewBag.AlimentationsStation as List<AlimentationStation> ?? new List<AlimentationStation>();
+    var alimentations = ViewBag.Alimentations as List<StationControl.Models.Equipement.Alimentation> ?? new List<StationControl.Models.Equipement.Alimentation>();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-primary">
+            <i class="bi bi-lightning-charge"></i> Alimentations de la station @station?.Nom
+        </h5>
+        <div>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+            <button type="button" class="btn btn-primary" id="openAjouterAlimentationModalBtn">
+                <i class="bi bi-plus-circle"></i> Ajouter Alimentation
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (alimentationsStation.Count > 0)
+        {
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Numéro de série</th>
+                        <th>Type d’alimentation</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in alimentationsStation)
+                    {
+                        <tr>
+                            <td>@a.NumSerie</td>
+                            <td>@a.Alimentation?.Libelle</td>
+                            <td>
+                                @if (a.Statut?.ToLower() == "fonctionnel")
+                                {
+                                    <span class="badge bg-success">Fonctionnelle</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">@a.Statut</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-warning small">
+                <i class="bi bi-exclamation-circle"></i> Aucune alimentation n’est associée à cette station.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- === Modal Ajouter Alimentation === -->
+<div class="modal fade" id="ajouterAlimentationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title fw-bold">Ajouter Alimentation</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="ajouterAlimentationForm" method="post" action="@Url.Action("AjouterAlimentation","Station", new { area="Observateur"})">
+                <input type="hidden" name="StationId" value="@station?.Id" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Type d’Alimentation</label>
+                        <select name="AlimentationId" class="form-select">
+                            @foreach(var a in alimentations) { <option value="@a.Id">@a.Libelle</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Numéro de série</label>
+                        <input type="text" name="NumSerie" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmerAjouterAlimentationBtn"><i class="bi bi-check-circle"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modalAlimentation = new bootstrap.Modal(document.getElementById("ajouterAlimentationModal"));
+
+    document.getElementById("openAjouterAlimentationModalBtn").addEventListener("click", function () {
+        modalAlimentation.show();
+    });
+
+    document.getElementById("confirmerAjouterAlimentationBtn").addEventListener("click", function () {
+        document.getElementById("ajouterAlimentationForm").submit();
+    });
+});
+</script>
+}

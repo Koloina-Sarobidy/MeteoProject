@@ -1,0 +1,113 @@
+@model List<StationControl.Models.Rapport.RapportMensuelStation>
+
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Rapport Mensuel des Stations";
+
+    int mois = ViewBag.Mois ?? DateTime.Now.AddMonths(-1).Month;
+    int annee = ViewBag.Annee ?? DateTime.Now.AddMonths(-1).Year;
+    string stationNom = ViewBag.StationNom as string;
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-list-ul me-2"></i> @ViewData["Title"]
+                @if(!string.IsNullOrEmpty(stationNom))
+                {
+                    <span class="text-secondary">- @stationNom</span>
+                }
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <!-- Formulaire de filtre -->
+            <form method="get" class="row g-3 mb-4 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">Mois</label>
+                    <select name="mois" class="form-select form-select-sm">
+                        @for(int m=1; m<=12; m++){
+                            <option value="@m" @(m==mois?"selected":"")>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Année</label>
+                    <input type="number" name="annee" value="@annee" class="form-control form-control-sm" min="2000" max="2100" />
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1 px-2 py-1">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                    <a href="@Url.Action("RapportMensuelStation", "Rapport", new { area="Observateur" })" class="btn btn-outline-secondary btn-sm flex-grow-1 px-2 py-1">
+                        <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+
+            @if(Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Station</th>
+                                <th>Date planifiée début</th>
+                                <th>Date planifiée fin</th>
+                                <th>Date effective début</th>
+                                <th>Date effective fin</th>
+                                <th>Statut intervention</th>
+                                <th>Technicien planifié</th>
+                                <th>Technicien effectif</th>
+                                <th>Description besoin</th>
+                                <th>Équipement</th>
+                                <th>Numéro série</th>
+                                <th>Statut équipement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var r in Model)
+                            {
+                                string badgeClass = r.StatutIntervention switch
+                                {
+                                    "Planifiée" => "bg-secondary text-dark",
+                                    "En Cours" => "bg-warning text-dark",
+                                    "Terminée" => "bg-success text-white",
+                                    _ => "bg-secondary text-dark"
+                                };
+
+                                <tr>
+                                    <td>@r.StationNom</td>
+                                    <td>@r.DatePlanifieeDebut?.ToString("dd/MM/yyyy")</td>
+                                    <td>@r.DatePlanifieeFin?.ToString("dd/MM/yyyy")</td>
+                                    <td>@r.DateEffectiveDebut?.ToString("dd/MM/yyyy")</td>
+                                    <td>@r.DateEffectiveFin?.ToString("dd/MM/yyyy")</td>
+                                    <td><span class="badge @badgeClass">@r.StatutIntervention</span></td>
+                                    <td>@r.TechnicienPlanifie</td>
+                                    <td>@r.TechnicienEffectif</td>
+                                    <td>@r.BesoinDescription</td>
+                                    <td>@r.EquipementLibelle</td>
+                                    <td>@r.EquipementNumSerie</td>
+                                    <td>@r.EquipementStatut</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <form method="post" action="@Url.Action("ExporterExcel", "Rapport", new { area="SuperAdmin" })">
+                    <input type="hidden" name="mois" value="@mois" />
+                    <input type="hidden" name="annee" value="@annee" />
+                    <button type="submit" class="btn btn-primary w-100 btn-sm">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                    </button>
+                </form>
+            }
+            else
+            {
+                <p class="text-muted mt-2">Aucun résultat pour ce filtre.</p>
+            }
+        </div>
+    </div>
+</div>

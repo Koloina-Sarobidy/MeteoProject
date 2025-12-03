@@ -1,0 +1,224 @@
+@using StationControl.Models.Crm
+@{
+    Layout = null;
+    ViewData["Title"] = "Inscription - StationControl";
+    var crms = ViewBag.Crms as List<Crm> ?? new List<Crm>();
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/css/register.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="~/img/Logo.png" />
+    <style>
+        .field-error {
+            color: red;
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card flex-column flex-lg-row desktop-height">
+            <!-- Section gauche -->
+            <div class="col-lg-6">
+                <div class="welcome-section py-4 py-lg-5">
+                    <div class="welcome-content">
+                        <h1>StationControl</h1>
+                        <p>Accès Responsables CRM (Administrateur simple)</p>
+                        <a href="javascript:void(0);" class="know-more-btn" onclick="window.history.back();">
+                            <i class="bi bi-arrow-left me-2"></i>Retour
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section droite -->
+            <div class="col-lg-6">
+                <div class="signin-section py-4 py-lg-5">
+                    <div class="mb-4 text-center">
+                        <h2>Inscription</h2>
+                    </div>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle me-1"></i>
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                        </div>
+                    }
+
+                    <!-- FORMULAIRE -->
+                    <form id="registerForm" method="post" action="/Admin/Auth/Register" enctype="multipart/form-data">
+                        <!-- Nom -->
+                        <div class="mb-3">
+                            <label for="nom" class="form-label">Nom</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="nom" name="Nom" placeholder="Entrez votre nom" required>
+                            </div>
+                        </div>
+
+                        <!-- Prénom -->
+                        <div class="mb-3">
+                            <label for="prenom" class="form-label">Prénom(s)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="prenom" name="Prenom" placeholder="Entrez votre prénom" required>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-mail</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="Email" placeholder="Entrez votre adresse e-mail" required>
+                            </div>
+                        </div>
+
+                        <!-- Mot de passe -->
+                        <div class="mb-3">
+                            <label for="motDePasse" class="form-label">Mot de passe</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control" id="motDePasse" name="MotDePasse" placeholder="Entrez votre mot de passe" required>
+                            </div>
+                            <div id="motDePasseError" class="field-error"></div>
+                        </div>
+
+                        <!-- Confirmer le mot de passe -->
+                        <div class="mb-3">
+                            <label for="confirmerMotDePasse" class="form-label">Confirmer le mot de passe</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input type="password" class="form-control" id="confirmerMotDePasse" placeholder="Confirmez votre mot de passe" required>
+                            </div>
+                            <div id="confirmerMotDePasseError" class="field-error"></div>
+                        </div>
+
+                        <!-- Photo de profil -->
+                        <div class="mb-3">
+                            <label for="photoProfil" class="form-label">Photo de profil</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="photoProfil" name="PhotoProfil" accept="image/*">
+                            </div>
+                            <div id="photoProfilError" class="field-error"></div>
+                        </div>
+
+                        <!-- Genre -->
+                        <div class="mb-3">
+                            <label class="form-label d-block">Genre</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="Genre" id="genreF" value="Féminin" required>
+                                    <label class="form-check-label" for="genreF">Féminin</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="Genre" id="genreM" value="Masculin">
+                                    <label class="form-check-label" for="genreM">Masculin</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="Genre" id="genreA" value="Autres">
+                                    <label class="form-check-label" for="genreA">Autres</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date de début -->
+                        <div class="mb-3">
+                            <label for="dateDebut" class="form-label">Date de début</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                                <input type="date" class="form-control" id="dateDebut" name="DateDebut" value="@DateTime.Now.ToString("yyyy-MM-dd")" readonly>
+                            </div>
+                        </div>
+
+                        <!-- CRM dynamique -->
+                        <div class="mb-3">
+                            <label for="crm" class="form-label">CRM</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
+                                <select class="form-select" id="crm" name="CrmId" required>
+                                    <option value="">-- Sélectionnez un CRM --</option>
+                                    @foreach (var crm in crms)
+                                    {
+                                        <option value="@crm.Id">@crm.Libelle</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Bouton -->
+                        <button type="submit" class="btn login-btn w-100">S'INSCRIRE</button>
+
+                        <div class="text-center mt-3">
+                            <a href="/Admin/Auth/Login" class="forgot-password">Déjà inscrit ? Se connecter</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const motDePasseInput = document.getElementById("motDePasse");
+        const confirmerInput = document.getElementById("confirmerMotDePasse");
+        const motDePasseError = document.getElementById("motDePasseError");
+        const confirmerMotDePasseError = document.getElementById("confirmerMotDePasseError");
+        const registerForm = document.getElementById("registerForm");
+
+        function validatePasswords() {
+            let isValid = true;
+            const motDePasse = motDePasseInput.value.trim();
+            const confirmer = confirmerInput.value.trim();
+
+            // Reset erreurs
+            motDePasseError.innerText = "";
+            confirmerMotDePasseError.innerText = "";
+
+            // Vérifie la longueur du mot de passe
+            if (motDePasse.length > 0 && motDePasse.length < 5) {
+                motDePasseError.innerText = "Le mot de passe doit contenir au moins 5 caractères.";
+                isValid = false;
+            }
+
+            // Vérifie la correspondance
+            if (confirmer.length > 0 && motDePasse !== confirmer) {
+                confirmerMotDePasseError.innerText = "Les mots de passe ne correspondent pas.";
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Validation en temps réel
+        motDePasseInput.addEventListener("input", validatePasswords);
+        confirmerInput.addEventListener("input", validatePasswords);
+
+        // Empêche la soumission si invalide
+        registerForm.addEventListener("submit", function(e) {
+            if (!validatePasswords()) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

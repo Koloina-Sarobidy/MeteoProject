@@ -1,0 +1,261 @@
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Dashboard";
+
+    int moisEnCours = DateTime.Now.Month;
+    string moisEnLettres = new DateTime(DateTime.Now.Year, moisEnCours, 1)
+        .ToString("MMMM", new System.Globalization.CultureInfo("fr-FR"));
+    int anneeEnCours = DateTime.Now.Year;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+
+
+<div class="container-fluid py-4">
+
+    <!-- CARTE DES STATIONS -->
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-geo-alt"></i> Carte des stations
+            </h5>
+            <a href="@Url.Action("ExportExcel", "Export", new { area = "SuperAdmin" })" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </a>
+        </div>
+        <div class="card-body">
+            <div id="map" style="height:600px; width:100%; border-radius:12px;"></div>
+        </div>
+    </div>
+
+    <!-- PIE CHARTS PAR CRM -->
+    <div class="card shadow-sm border-0 mb-4 bg-white p-3">
+        <div class="card-header bg-white">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-pie-chart"></i> Statuts des stations par CRM
+            </h5>
+        </div>
+        <div class="row">
+            <div id="crmChartsContainer" class="row w-100"></div>
+        </div>
+    </div>
+
+    <!-- STATUTS DES STATIONS PAR MARQUE -->
+    <div class="row mb-4">
+        <!-- Tableau -->
+        <div class="col-lg-6 mb-3">
+            <div class="card shadow-sm border-0 bg-white">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary"><i class="bi bi-fuel-pump"></i> Statuts des stations par Brand</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-hover align-middle" id="brandStatsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Brand</th>
+                                <th>Total</th>
+                                <th>Fonctionnelle</th>
+                                <th>Partielle</th>
+                                <th>Non Fonctionnelle</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radial Bar Chart -->
+        <div class="col-lg-6 mb-3">
+            <div class="card shadow-sm border-0 bg-white">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary"><i class="bi bi-bar-chart"></i> Taux par Brand</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="brandRadialChart" style="height:400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BAR CHART : INTERVENTIONS CURATIVES PAR STATION -->
+    <div class="card shadow-sm border-0 mb-4 bg-white p-3">
+        <div class="card-header bg-white">
+            <h5 class="mb-0 text-primary"><i class="bi bi-bar-chart"></i> Interventions curatives par station - @moisEnLettres @anneeEnCours</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="interventionChart" style="max-height:420px;"></canvas>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="~/vendor/chart.js/chart.umd.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    var map = L.map('map').setView([-18.8792, 47.5079], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    var stationsLayer = L.layerGroup().addTo(map);
+
+    var brandRadialChart;
+    var interventionChart;
+
+    function updateDashboard() {
+        fetch('@Url.Action("RealtimeData", "Dashboard", new { area = "SuperAdmin" })')
+        .then(res => res.json())
+        .then(data => {
+            console.log(data); // DEBUG
+
+            // Carte
+            stationsLayer.clearLayers();
+            data.stations?.forEach(s => {
+                if(s.latitude && s.longitude){
+                    var lat = parseFloat(s.latitude) || 0;
+                    var lng = parseFloat(s.longitude) || 0;
+                    var color = "gray";
+                    if(s.statut?.toLowerCase() === "fonctionnelle") color = "green";
+                    else if(s.statut?.toLowerCase() === "partiellement fonctionnelle") color = "orange";
+                    else if(s.statut?.toLowerCase() === "non fonctionnelle") color = "red";
+
+                    L.circleMarker([lat, lng], {
+                        color: color,
+                        radius: 8,
+                        fillOpacity: 0.8
+                    }).addTo(stationsLayer).bindPopup(`
+                        <b>${s.nom}</b><br/>
+                        <b>Statut :</b> ${s.statut}<br/>
+                        <b>Latitude :</b> ${s.latitude}<br/>
+                        <b>Longitude :</b> ${s.longitude}<br/>
+                        <b>Type :</b> ${s.typeStation?.libelle ?? "-"}<br/>
+                        <b>Region :</b> ${s.region?.libelle ?? "-"}<br/>
+                        <b>Crm :</b> ${s.crm?.libelle}<br/>
+                        <b>Début :</b> ${s.dateDebut ? new Date(s.dateDebut).toLocaleDateString('fr-FR') : "-"}<br/>
+                    `);
+                }
+            });
+
+            // Pie Charts CRM
+            var crmContainer = document.getElementById("crmChartsContainer");
+            crmContainer.innerHTML = "";
+            data.crmChartData?.forEach(crm => {
+                var col = document.createElement("div");
+                col.className = "col-lg-4 col-md-6 col-sm-12 mb-4";
+                col.innerHTML = `
+                    <div class="card shadow-sm border-0 h-100 bg-white">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0 fw-semibold text-primary"><i class="bi bi-building"></i> ${crm.crmName}</h6>
+                        </div>
+                        <div class="card-body d-flex justify-content-center align-items-center">
+                            <canvas id="pieChart-${crm.crmId}" style="max-width:100%; height:280px;"></canvas>
+                        </div>
+                    </div>`;
+                crmContainer.appendChild(col);
+
+                var ctx = document.getElementById(`pieChart-${crm.crmId}`);
+                new Chart(ctx.getContext('2d'), {
+                    type:'pie',
+                    data:{
+                        labels:["Fonctionnelle","Partielle","Non Fonctionnelle"],
+                        datasets:[{
+                            data:[
+                                crm.percentages["Fonctionnelle"] ?? 0,
+                                crm.percentages["Partiellement Fonctionnelle"] ?? 0,
+                                crm.percentages["Non Fonctionnelle"] ?? 0
+                            ],
+                            backgroundColor:["#28a745","#fd7e14","#dc3545"],
+                            borderWidth:1
+                        }]
+                    },
+                    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" } } }
+                });
+            });
+
+            // Brand Chart
+            var labels = data.brandStats.map(b => b.brandName);
+            var tauxFonctionnelle = data.brandStats.map(b => b.tauxFonctionnelle);
+            var tauxPartielle = data.brandStats.map(b => b.tauxPartielle);
+            var tauxNonFonctionnelle = data.brandStats.map(b => b.tauxNonFonctionnelle);
+
+            var ctxRadial = document.getElementById("brandRadialChart").getContext('2d');
+            if(brandRadialChart){
+                brandRadialChart.data.labels = labels;
+                brandRadialChart.data.datasets[0].data = tauxFonctionnelle;
+                brandRadialChart.data.datasets[1].data = tauxPartielle;
+                brandRadialChart.data.datasets[2].data = tauxNonFonctionnelle;
+                brandRadialChart.update();
+            } else {
+                brandRadialChart = new Chart(ctxRadial, {
+                    type:'bar',
+                    data:{ labels:labels, datasets:[
+                        { label:'Fonctionnelle %', data:tauxFonctionnelle, backgroundColor:'#28a745' },
+                        { label:'Partielle %', data:tauxPartielle, backgroundColor:'#fd7e14' },
+                        { label:'Non Fonctionnelle %', data:tauxNonFonctionnelle, backgroundColor:'#dc3545' }
+                    ]},
+                    options:{ indexAxis:'y', responsive:true, plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'Taux de statut des stations par Brand (%)' } }, scales:{ x:{ beginAtZero:true, max:100 }, y:{ title:{ display:true } } } }
+                });
+            }
+
+            // Brand Table
+            var tbody = document.querySelector("#brandStatsTable tbody");
+            tbody.innerHTML = "";
+            data.brandStats?.forEach(b => {
+                var tr = document.createElement("tr");
+                tr.innerHTML = `<td><b>${b.brandName}</b></td>
+                                <td>${b.totalStations}</td>
+                                <td>${b.fonctionnelle}</td>
+                                <td>${b.partielle}</td>
+                                <td>${b.nonFonctionnelle}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            // Interventions
+            var stationLabels = Object.keys(data.interventionStats || {});
+            var interventionCounts = Object.values(data.interventionStats || {});
+            var ctx2 = document.getElementById('interventionChart').getContext('2d');
+            if(interventionChart){
+                interventionChart.data.labels = stationLabels;
+                interventionChart.data.datasets[0].data = interventionCounts;
+                interventionChart.update();
+            } else {
+                interventionChart = new Chart(ctx2, {
+                    type:'bar',
+                    data:{ labels:stationLabels, datasets:[{ label:"Nombre d'interventions curatives", data:interventionCounts, backgroundColor:'#007bff', borderColor:'#0056b3', borderWidth:1 }] },
+                    options:{ responsive:true, plugins:{ legend:{ display:false }, title:{ display:true, text:'Interventions curatives par station pour le mois actuel' } }, scales:{ x:{ title:{ display:true } }, y:{ beginAtZero:true, title:{ display:true } } } }
+                });
+            }
+
+        }).catch(err => console.error("Erreur fetch RealtimeData :", err));
+    }
+
+    updateDashboard();
+    setInterval(updateDashboard, 30000);
+
+});
+</script>
+}
+
+<style>
+    #map { width: 100%; height: 600px; border-radius: 12px; }
+    .card.bg-white { background-color: #ffffff !important; }
+</style>

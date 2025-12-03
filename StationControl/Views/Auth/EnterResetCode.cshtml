@@ -1,0 +1,60 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Saisir le code - StationControl";
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/css/login.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="~/img/Logo.png" />
+</head>
+<body>
+<div class="login-container">
+    <div class="login-card flex-column flex-lg-row desktop-height">
+        <div class="col-lg-6">
+            <div class="welcome-section py-4 py-lg-5">
+                <div class="welcome-content">
+                    <h1>StationControl</h1>
+                    <p>Entrez le code reçu par e-mail</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="signin-section py-4 py-lg-5">
+                <div class="mb-4 text-center">
+                    <h2>Code de réinitialisation</h2>
+                </div>
+
+                <form method="post" action="/Auth/VerifyResetCode">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="userId" value="@ViewBag.UserId" />
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Code</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-key"></i></span>
+                            <input type="text" class="form-control" id="code" name="Code" placeholder="Entrez le code" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn login-btn w-100">Valider le code</button>
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger mt-2">@TempData["ErrorMessage"]</div>
+                    }
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success mt-2">@TempData["SuccessMessage"]</div>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>

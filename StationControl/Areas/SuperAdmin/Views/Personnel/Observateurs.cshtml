@@ -1,0 +1,109 @@
+@model Dictionary<StationControl.Models.Station.Station, List<StationControl.Models.Auth.Utilisateur>>
+
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Observateurs par Station";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0 text-primary"><i class="bi bi-people-fill me-2"></i> Observateurs par Station</h5>
+        </div>
+
+        <div class="card-body">
+            <form method="get" action="@Url.Action("ListeObservateurs", "Personnel", new { area = "SuperAdmin" })" class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Station</label>
+                    <select class="form-select" name="stationId">
+                        <option value="">Toutes</option>
+                        @foreach (var s in ViewBag.Stations)
+                        {
+                            <option value="@s.Id" @(ViewBag.FiltreStationId == s.Id ? "selected" : "")>@s.Nom</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date d'entrée</label>
+                    <input type="date" class="form-control" name="dateDebut" value="@ViewBag.FiltreDateDebut?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" name="statut">
+                        <option value="">Tous</option>
+                        <option value="Actif" @(ViewBag.FiltreStatut == "Actif" ? "selected" : "")>Actif</option>
+                        <option value="Congé" @(ViewBag.FiltreStatut == "Congé" ? "selected" : "")>Congé</option>
+                        <option value="Retraité" @(ViewBag.FiltreStatut == "Retraité" ? "selected" : "")>Retraité</option>
+                        <option value="Affecté" @(ViewBag.FiltreStatut == "Affecté" ? "selected" : "")>Affecté</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Filtrer</button>
+                    <a href="@Url.Action("ListeObservateurs", "Personnel", new { area = "SuperAdmin" })" class="btn btn-outline-secondary flex-grow-1">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+            </br>
+
+            @foreach (var stationGroup in Model)
+            {
+                <h6 class="text-primary mt-4">@stationGroup.Key.Nom</h6>
+                <div class="table-responsive mb-3">
+                    <table class="table table-striped table-hover table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Profil</th>
+                                <th>Nom & Prénom(s) </th>
+                                <th>Email</th>
+                                <th>Statut</th>
+                                <th>Date début</th>
+                                <th>Date fin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var utilisateur in stationGroup.Value)
+                            {
+                                <tr style="cursor:pointer;" 
+                                    onclick="window.location='@Url.Action("DetailsObservateur", "Personnel", new { area = "SuperAdmin", id = utilisateur.Id })'">
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(utilisateur.PhotoProfil))
+                                        {
+                                            <img src="~/uploads/profiles/@utilisateur.PhotoProfil"
+                                                class="rounded-circle"
+                                                style="width:45px; height:45px; object-fit:cover; border:1px solid #ddd;" />
+                                        }
+                                        else
+                                        {
+                                            <img src="https://ui-avatars.com/api/?name=@utilisateur.Nom+@utilisateur.Prenom&background=008B8B&color=fff&size=128"
+                                                class="rounded-circle"
+                                                style="width:45px; height:45px; border:1px solid #ddd;" />
+                                        }
+                                    </td>
+                                    <td>@utilisateur.Nom @utilisateur.Prenom</td>
+                                    <td>@utilisateur.Email</td>
+                                    <td>
+                                        @if (utilisateur.Statut == "Actif")
+                                        {
+                                            <span class="badge bg-success">@utilisateur.Statut</span>
+                                        }
+                                        else if (utilisateur.Statut == "Congé")
+                                        {
+                                            <span class="badge bg-warning">@utilisateur.Statut</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@utilisateur.Statut</span>
+                                        }
+                                    </td>
+                                    <td>@utilisateur.DateDebut.ToString("dd/MM/yyyy")</td>
+                                    <td>@utilisateur.DateFin?.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

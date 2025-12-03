@@ -1,0 +1,188 @@
+@model StationControl.Models.Intervention.Preventive
+
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Détails intervention";
+}
+
+<div class="container py-4">
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center bg-white">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-calendar-event me-2"></i>
+                Détails intervention préventive
+            </h5>
+            <button class="btn btn-outline-secondary btn-sm" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+
+            <h6 class="text-muted mb-3">Informations générales</h6>
+
+            <table class="table table-bordered mb-4">
+                <tr>
+                    <th>Date prévue</th>
+                    <td>
+                        @Model.DatePrevueDebut.ToString("dd/MM/yyyy")
+                        @if (Model.DatePrevueFin.HasValue)
+                        {
+                            <text> - @Model.DatePrevueFin?.ToString("dd/MM/yyyy")</text>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <th>Date effective</th>
+                    <td>
+                        @(Model.DateEffectiveDebut?.ToString("dd/MM/yyyy") ?? "-")
+                        @if (Model.DateEffectiveFin.HasValue)
+                        {
+                            <text> - @Model.DateEffectiveFin.Value.ToString("dd/MM/yyyy")</text>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <th>Planificateur</th>
+                    <td>@Model.UtilisateurPlanificateur?.Nom @Model.UtilisateurPlanificateur?.Prenom</td>
+                </tr>
+                <tr>
+                    <th>Exécuteur</th>
+                    <td>@Model.UtilisateurEffectif?.Nom @Model.UtilisateurEffectif?.Prenom</td>
+                </tr>
+                <tr>
+                    <th>Description</th>
+                    <td>@Model.Description</td>
+                </tr>
+                <tr>
+                    <th>État</th>
+                    <td>
+                        @if (Model.EstAnnule)
+                        {
+                            <span class="badge bg-danger">Annulé</span>
+                        }
+                        else if (Model.EstComplete)
+                        {
+                            <span class="badge bg-success">Complété</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">En attente</span>
+                        }
+                    </td>
+                </tr>
+            </table>
+
+            <div class="mb-3">
+                @* Si la date de début existe et la date de fin est vide → afficher formulaire Terminer *@
+                @if (Model.DateEffectiveDebut.HasValue && !Model.DateEffectiveFin.HasValue)
+                {
+                    <form id="formTerminer" method="post" class="row g-3 align-items-end"
+                          action="@Url.Action("Terminer", "Preventive", new { area = "Observateur", id = Model.Id })">
+                        <div class="col-md-4">
+                            <label class="form-label">Date effective fin</label>
+                            <input type="date" name="dateFin" class="form-control" required />
+                        </div>
+                        <div class="col-md-auto">
+                            <button type="button" class="btn btn-primary"
+                                    onclick="openConfirm('terminer', 'formTerminer')">
+                                <i class="bi bi-flag"></i> Terminer
+                            </button>
+                        </div>
+                    </form>
+                }
+                else if (!Model.EstAnnule && !Model.EstComplete)
+                {
+                    <div class="d-flex gap-2">
+                        <form id="formAnnuler" method="post"
+                              action="@Url.Action("Annuler", "Preventive", new { area = "Observateur", id = Model.Id })">
+                            <button type="button" class="btn btn-danger"
+                                    onclick="openConfirm('annuler', 'formAnnuler')">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </button>
+                        </form>
+
+                        <button type="button" class="btn btn-success"
+                                onclick="document.getElementById('formEffectuer').style.display='block'">
+                            <i class="bi bi-check2-circle"></i> Effectuer
+                        </button>
+                    </div>
+                }
+            </div>
+
+            @* FORMULAIRE EFFECTUER *@
+            <div id="formEffectuer" class="mt-4" style="display:none;">
+                <form id="formEffectuerInner" method="post"
+                      action="@Url.Action("Effectuer", "Preventive", new { area = "Observateur", id = Model.Id })">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Date effective début</label>
+                            <input type="date" name="dateDebut" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date effective fin</label>
+                            <input type="date" name="dateFin" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Exécuteur</label>
+                            <select name="executeurId" class="form-select" required>
+                                <option value="">Sélectionner...</option>
+                                @foreach (var u in ViewBag.Utilisateurs as List<StationControl.Models.Auth.Utilisateur>)
+                                {
+                                    <option value="@u.Id">@u.Nom @u.Prenom</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary mt-3"
+                            onclick="openConfirm('effectuer', 'formEffectuerInner')">
+                        <i class="bi bi-save"></i> Enregistrer
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    @* MODAL DE CONFIRMATION CENTRALISÉ *@
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary" id="confirmModalLabel">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Êtes-vous sûr de vouloir <span id="actionText"></span> cette intervention ?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i>  Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmBtn"><i class="bi bi-check-circle"></i>  Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function openConfirm(action, formId) {
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            document.getElementById('actionText').textContent = action;
+
+            const confirmBtn = document.getElementById('confirmBtn');
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.replaceWith(newConfirmBtn);
+
+            newConfirmBtn.addEventListener('click', function () {
+                document.getElementById(formId).submit();
+            });
+
+            modal.show();
+        }
+    </script>
+}

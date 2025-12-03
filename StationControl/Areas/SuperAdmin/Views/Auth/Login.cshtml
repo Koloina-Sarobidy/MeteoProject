@@ -1,0 +1,96 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Connexion Chef SMIT - StationControl";
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+
+    <link href="~/css/login.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="~/img/Logo.png" />
+    
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card flex-column flex-lg-row">
+            <div class="welcome-section col-lg-6">
+                <div class="welcome-content">
+                    <h1>StationControl</h1>
+                    <p>Accès CHEF SMIT</p>
+                    <a href="javascript:void(0);" class="know-more-btn" onclick="window.history.back();">
+                        <i class="bi bi-arrow-left me-2"></i>Retour
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="signin-section py-4 py-lg-5">
+                    <div class="mb-4">
+                        <h2>Connexion</h2>
+                    </div>
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @ViewBag.Error
+                        </div>
+                    }
+                    <form method="post" action="/SuperAdmin/Auth/ToLog">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">E-mail</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="email" class="form-control" id="username" name="email" placeholder="Entrez votre adresse e-mail" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password" class="form-control" id="password" name="motDePasse" placeholder="Entrez votre mot de passe" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn login-btn w-100">
+                            CONNEXION
+                        </button>
+                        
+                        <div class="text-center mt-3">
+                            <a href="/Auth/ForgotPassword?roleString=SuperAdmin" class="forgot-password">Mot de passe oublié ?</a>
+                        </div>
+
+                        
+                        <div class="divider">
+                            <span>OU</span>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p style="font-size: 0.9rem; color: #666;">
+                                Pas encore de compte ? 
+                                <a href="/SuperAdmin/Auth/Inscription" 
+                                   style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                                    S'inscrire
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

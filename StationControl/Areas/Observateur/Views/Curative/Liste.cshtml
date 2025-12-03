@@ -1,0 +1,85 @@
+@using StationControl.Models.Besoin
+@model List<BesoinStation>
+
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Besoins traités mais non complets";
+}
+
+<style>
+    /* Hover sur toutes les lignes de tableau */
+    table.table tbody tr:hover td {
+        background-color: var(--primary-light);
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+</style>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Interventions planifiées
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Aucune intervention planifiée pour cette station.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="20%">Équipement</th>
+                                <th width="20%">Besoin</th>
+                                <th width="45%">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var besoin in Model)
+                            {
+                                <tr onclick="window.location.href='@Url.Action("Details", "Curative", new { id = besoin.Id, area = "Observateur" })'">
+                                    <td>
+                                        @(besoin.AlimentationStation?.Alimentation.Libelle 
+                                          ?? besoin.CapteurStation?.Capteur.Libelle ?? "-")
+                                        (@(besoin.AlimentationStation?.NumSerie ?? besoin.CapteurStation?.NumSerie))
+                                    </td>
+                                    <td>@(besoin.EquipementBesoin?.Libelle ?? "-")</td>
+                                    <td>@besoin.DescriptionProbleme</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

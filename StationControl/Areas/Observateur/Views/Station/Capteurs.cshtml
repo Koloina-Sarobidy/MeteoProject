@@ -1,0 +1,123 @@
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Capteurs de la station";
+
+    var station = ViewBag.Station as Station;
+    var capteursStation = ViewBag.CapteursStation as List<CapteurStation> ?? new List<CapteurStation>();
+    var capteurs = ViewBag.Capteurs as List<StationControl.Models.Equipement.Capteur> ?? new List<StationControl.Models.Equipement.Capteur>();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-primary">
+            <i class="bi bi-cpu"></i> Capteurs de la station @station?.Nom
+        </h5>
+        <div>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+            <button type="button" class="btn btn-primary" id="openAjouterCapteurModalBtn">
+                <i class="bi bi-plus-circle"></i> Ajouter Capteur
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (capteursStation.Count > 0)
+        {
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Numéro de série</th>
+                        <th>Type de capteur</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in capteursStation)
+                    {
+                        <tr>
+                            <td>@c.NumSerie</td>
+                            <td>@c.Capteur?.Libelle</td>
+                            <td>
+                                @if (c.Statut?.ToLower() == "fonctionnel")
+                                {
+                                    <span class="badge bg-success">Fonctionnel</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">@c.Statut</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-warning small">
+                <i class="bi bi-exclamation-circle"></i> Aucun capteur n’est associé à cette station.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- === Modal Ajouter Capteur === -->
+<div class="modal fade" id="ajouterCapteurModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title fw-bold">Ajouter Capteur</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="ajouterCapteurForm" method="post" action="@Url.Action("AjouterCapteur","Station", new { area="Observateur"})">
+                <input type="hidden" name="StationId" value="@station?.Id" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Type de Capteur</label>
+                        <select name="CapteurId" class="form-select">
+                            @foreach(var c in capteurs) { <option value="@c.Id">@c.Libelle</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Numéro de série</label>
+                        <input type="text" name="NumSerie" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmerAjouterCapteurBtn"><i class="bi bi-check-circle"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modalConfirmation = new bootstrap.Modal(document.getElementById("ajouterCapteurModal"));
+    document.getElementById("openAjouterCapteurModalBtn").addEventListener("click", function () {
+        new bootstrap.Modal(document.getElementById("ajouterCapteurModal")).show();
+    });
+
+    document.getElementById("confirmerAjouterCapteurBtn").addEventListener("click", function () {
+        document.getElementById("ajouterCapteurForm").submit();
+    });
+});
+</script>
+}

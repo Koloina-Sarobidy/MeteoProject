@@ -1,0 +1,150 @@
+@model StationControl.Models.Ticket.TicketsSuperAdminViewModel
+
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Tickets";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-envelope-fill me-2"></i> Tickets
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Filtre par dates -->
+            <form method="get" class="row g-3 mb-4 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Date début</label>
+                    <input type="date" name="dateDebut" class="form-control" value="@Model.DateDebut?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date fin</label>
+                    <input type="date" name="dateFin" class="form-control" value="@Model.DateFin?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i> Filtrer
+                    </button>
+                    <a href="@Url.Action("ListeTicket", "Ticket", new { area = "SuperAdmin" })" class="btn btn-outline-secondary flex-grow-1">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+
+            <div class="row mb-5">
+                <!-- Tickets Reçus -->
+                <div class="col-md-12 mb-5">
+                    <h6 class="text-primary mb-3">Tickets Reçus</h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Objet</th>
+                                    <th>Expéditeur</th>
+                                    <th>Date</th>
+                                    <th>Vu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.TicketsRecus.Any())
+                                {
+                                    foreach (var t in Model.TicketsRecus)
+                                    {
+                                        <tr style="cursor:pointer;" onclick="window.location='@Url.Action("DetailRecu", "Ticket", new { area = "SuperAdmin", ticketId = t.Id })'">
+                                            <td>@t.Objet</td>
+                                            <td>
+                                                @if (t.Crm != null)
+                                                {
+                                                    <span class="badge bg-primary">@t.Crm.Libelle</span>
+                                                }
+                                                else if (t.Station != null)
+                                                {
+                                                    <span class="badge bg-info text-dark">@t.Station.Nom</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Super Admin</span>
+                                                }
+                                            </td>
+                                            <td>@t.DateCreation.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td>
+                                                @if(t.DejaVu)
+                                                {
+                                                    <span class="badge bg-success">Oui</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">Non</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="4" class="text-center">Aucun ticket trouvé</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tickets Envoyés -->
+                <div class="col-md-12">
+                    <h6 class="text-primary mb-3">Tickets Envoyés</h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Objet</th>
+                                    <th>Destinataires</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.TicketsEnvoyes.Any())
+                                {
+                                    foreach (var t in Model.TicketsEnvoyes)
+                                    {
+                                        <tr style="cursor:pointer;" onclick="window.location='@Url.Action("DetailEnvoye", "Ticket", new { area = "SuperAdmin", ticketId = t.Id })'">
+                                            <td>@t.Objet</td>
+                                            <td>
+                                                @{
+                                                    var destinataires = new List<string>();
+
+                                                    if (t.CrmDestinataire != null && t.CrmDestinataire.Any())
+                                                        destinataires.AddRange(t.CrmDestinataire.Select(c => $"<span class='badge bg-primary me-1'>{c.Libelle}</span>"));
+
+                                                    if (t.StationDestinataire != null && t.StationDestinataire.Any())
+                                                        destinataires.AddRange(t.StationDestinataire.Select(s => $"<span class='badge bg-info text-dark me-1'>{s.Nom}</span>"));
+
+                                                    if (!destinataires.Any())
+                                                        destinataires.Add("<span class='badge bg-secondary'>Super Admin</span>");
+
+                                                    @Html.Raw(string.Join(" ", destinataires))
+                                                }
+                                            </td>
+                                            <td>@t.DateCreation.ToString("dd/MM/yyyy HH:mm")</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center">Aucun ticket trouvé</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,78 @@
+@model List<StationControl.Models.Auth.HistoriqueConnexion>
+
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Historique des connexions";
+    int currentPage = ViewData["CurrentPage"] != null ? (int)ViewData["CurrentPage"] : 1;
+    int totalPages = ViewData["TotalPages"] != null ? (int)ViewData["TotalPages"] : 1;
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary"><i class="bi bi-clock-history me-2"></i> Historique des connexions</h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+            <form class="row g-3 mb-3" method="get">
+                <div class="col-md-3">
+                    <label class="form-label">Date début</label>
+                    <input type="date" class="form-control" name="dateDebut" value="@ViewData["DateDebut"]">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date fin</label>
+                    <input type="date" class="form-control" name="dateFin" value="@ViewData["DateFin"]">
+                </div>
+                <div class="col-md-3 align-self-end">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrer</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Date & Heure début</th>
+                            <th>Date & Heure fin</th>
+                            <th>Durée</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var h in Model)
+                        {
+                            <tr>
+                                <td>@h.Utilisateur.Nom @h.Utilisateur.Prenom</td>
+                                <td>@h.DateHeureDebut.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(h.DateHeureFin.HasValue ? h.DateHeureFin.Value.ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                <td>@(h.DateHeureFin.HasValue ? (h.DateHeureFin.Value - h.DateHeureDebut).ToString(@"hh\:mm") : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+
+            <!-- Pagination -->
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?dateDebut=@ViewData["DateDebut"]&dateFin=@ViewData["DateFin"]&page=@(currentPage - 1)">Précédent</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="?dateDebut=@ViewData["DateDebut"]&dateFin=@ViewData["DateFin"]&page=@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="?dateDebut=@ViewData["DateDebut"]&dateFin=@ViewData["DateFin"]&page=@(currentPage + 1)">Suivant</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>

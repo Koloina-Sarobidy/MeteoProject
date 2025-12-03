@@ -1,0 +1,286 @@
+@model StationControl.Models.Auth.Utilisateur
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Informations personnelles";
+}
+
+<!-- Affichage du message TempData -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+<!-- Affichage du message d'erreur TempData -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <!-- Header avec titre et bouton retour -->
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-person-circle me-2"></i> Informations personnelles
+            </h5>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="card-body">
+            <div class="row">
+                <!-- Profil photo et infos -->
+                <div class="col-xl-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
+                            <img src="@(!string.IsNullOrEmpty(Model.PhotoProfil) 
+                                    ? Url.Content($"~/uploads/profiles/{Model.PhotoProfil}") 
+                                    : $"https://ui-avatars.com/api/?name={Model.Prenom}+{Model.Nom}&background=008B8B&color=fff")"
+                            class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            <h4>@Model.Nom @Model.Prenom</h4>
+                            <h5 class="text-muted">@Model.Role?.Libelle</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="col-xl-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body pt-3">
+                            <ul class="nav nav-tabs nav-tabs-bordered">
+                                <li class="nav-item">
+                                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview">Aperçu</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#edit-profile">Modifier le profil</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#change-password">Changer le mot de passe</button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content pt-2">
+                                <!-- Overview -->
+                                <div class="tab-pane fade show active" id="overview">
+                                    <h5 class="card-title">Informations personnelles</h5>
+                                    <div class="row mb-2">
+                                        <div class="col-md-4 fw-semibold">Nom :</div>
+                                        <div class="col-md-8">@Model.Nom</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-4 fw-semibold">Prénom :</div>
+                                        <div class="col-md-8">@Model.Prenom</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-4 fw-semibold">Email :</div>
+                                        <div class="col-md-8">@Model.Email</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-4 fw-semibold">Genre :</div>
+                                        <div class="col-md-8">@Model.Genre</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-4 fw-semibold">Date d'entrée :</div>
+                                        <div class="col-md-8">@Model.DateDebut.ToString("dd/MM/yyyy")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-4 fw-semibold">Rôle :</div>
+                                        <div class="col-md-8">@Model.Role?.Libelle</div>
+                                    </div>
+                                </div>
+
+                               <!-- Edit Profile -->
+                                <div class="tab-pane fade pt-3" id="edit-profile">
+                                    <form enctype="multipart/form-data" method="post" id="editProfileForm" action="/Admin/Utilisateur/EditProfile">
+                                        @Html.AntiForgeryToken()
+
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Nom</label>
+                                            <div class="col-md-8">
+                                                <input type="text" class="form-control" value="@Model.Nom" name="Nom" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Prénom</label>
+                                            <div class="col-md-8">
+                                                <input type="text" class="form-control" value="@Model.Prenom" name="Prenom" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Email</label>
+                                            <div class="col-md-8">
+                                                <input type="email" class="form-control" value="@Model.Email" name="Email" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Photo de profil</label>
+                                            <div class="col-md-8">
+                                                <input type="file" class="form-control" name="PhotoProfil" accept="image/*" onchange="previewImage(event)">
+                                                <div class="mt-2">
+                                                    <img id="photoPreview" 
+                                                        src="@(!string.IsNullOrEmpty(Model.PhotoProfil) 
+                                                                ? Url.Content($"~/uploads/profiles/{Model.PhotoProfil}") 
+                                                                : $"https://ui-avatars.com/api/?name={Model.Prenom}+{Model.Nom}&background=008B8B&color=fff")" 
+                                                        class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-end">
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                                                <i class="bi bi-save"></i> Enregistrer
+                                            </button>
+                                        </div>
+
+                                        <!-- Modal de confirmation -->
+                                        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title text-primary" id="confirmModalLabel"><i class="bi bi-exclamation-triangle"></i> Confirmation</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Êtes-vous sûr de vouloir enregistrer les modifications de votre profil ?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                                                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Enregistrer</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Change Password -->
+                                <div class="tab-pane fade pt-3" id="change-password">
+                                    <form id="changePasswordForm" method="post" action="/Admin/Utilisateur/ChangePassword">
+                                        @Html.AntiForgeryToken()
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Mot de passe actuel</label>
+                                            <div class="col-md-8">
+                                                <input type="password" class="form-control" id="currentPassword" name="CurrentPassword" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Nouveau mot de passe</label>
+                                            <div class="col-md-8">
+                                                <input type="password" class="form-control" id="newPassword" name="NewPassword" required>
+                                            </div>
+                                            <div class="col-md-8 offset-md-4 field-error" style="color: red;" id="newPasswordError"></div>
+                                        </div>
+                                        <div class="mb-3 row">
+                                            <label class="col-md-4 col-form-label">Confirmer le mot de passe</label>
+                                            <div class="col-md-8">
+                                                <input type="password" class="form-control" id="confirmPassword" name="ConfirmPassword" required>
+                                            </div>
+                                            <div class="col-md-8 offset-md-4 field-error" style="color: red;" id="confirmPasswordError"></div>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmPasswordModal">
+                                                <i class="bi bi-save"></i> Valider
+                                            </button>
+                                        </div>
+
+                                        <!-- Modal de confirmation -->
+                                        <div class="modal fade" id="confirmPasswordModal" tabindex="-1" aria-labelledby="confirmPasswordModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title text-primary" id="confirmPasswordModalLabel"><i class="bi bi-exclamation-triangle"></i> Confirmation</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Êtes-vous sûr de vouloir modifier votre mot de passe ?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                                                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Confirmer</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div> <!-- end tab-content -->
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- end row -->
+        </div> <!-- end card-body -->
+    </div> <!-- end card -->
+</div> <!-- end container -->
+<script>
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function(){
+            const output = document.getElementById('photoPreview');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // Pour le mot de passe
+    const newPasswordInput = document.getElementById("newPassword");
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+    const newPasswordError = document.getElementById("newPasswordError");
+    const confirmPasswordError = document.getElementById("confirmPasswordError");
+    const changePasswordForm = document.getElementById("changePasswordForm");
+
+    function validatePasswordChange() {
+        let isValid = true;
+        const newPassword = newPasswordInput.value.trim();
+        const confirmPassword = confirmPasswordInput.value.trim();
+
+        // Réinitialiser les erreurs
+        newPasswordError.innerText = "";
+        confirmPasswordError.innerText = "";
+
+        // Vérifie la longueur minimale
+        if (newPassword.length > 0 && newPassword.length < 5) {
+            newPasswordError.innerText = "Le mot de passe doit contenir au moins 5 caractères.";
+            isValid = false;
+        }
+
+        // Vérifie la correspondance
+        if (confirmPassword.length > 0 && newPassword !== confirmPassword) {
+            confirmPasswordError.innerText = "Les mots de passe ne correspondent pas.";
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    newPasswordInput.addEventListener("input", validatePasswordChange);
+    confirmPasswordInput.addEventListener("input", validatePasswordChange);
+
+    changePasswordForm.addEventListener("submit", function(e) {
+        if (!validatePasswordChange()) {
+            e.preventDefault();
+        }
+    });
+
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function(){
+            const output = document.getElementById('photoPreview');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+</script>

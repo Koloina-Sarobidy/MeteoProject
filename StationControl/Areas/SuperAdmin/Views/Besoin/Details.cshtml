@@ -1,0 +1,149 @@
+@using StationControl.Models.Besoin
+@model BesoinStation
+
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Détails du besoin";
+    var intervention = ViewBag.Intervention as StationControl.Models.Intervention.Intervention;
+}
+
+<div class="container-fluid py-4">
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Détails du besoin
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+
+            <dl class="row">
+                <dt class="col-sm-3">Station</dt>
+                <dd class="col-sm-9">@Model.Station?.Nom</dd>
+
+                <dt class="col-sm-3">Équipement</dt>
+                <dd class="col-sm-9">
+                    @(Model.AlimentationStation?.Alimentation.Libelle ?? Model.CapteurStation?.Capteur.Libelle)
+                    (@(Model.AlimentationStation?.NumSerie ?? Model.CapteurStation?.NumSerie))
+                </dd>
+
+                <dt class="col-sm-3">Type de besoin</dt>
+                <dd class="col-sm-9">@Model.EquipementBesoin?.Libelle</dd>
+
+                <dt class="col-sm-3">Description</dt>
+                <dd class="col-sm-9">@Model.DescriptionProbleme</dd>
+
+                <dt class="col-sm-3">Statut</dt>
+                <dd class="col-sm-9">
+                    @if (Model.EstTraite)
+                    {
+                        <span class="badge bg-success">Traité</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Non traité</span>
+                    }
+                </dd>
+            </dl>
+
+            @if (intervention != null)
+            {
+                <h6 class="text-primary mt-4">Intervention associée</h6>
+                <dl class="row">
+
+                    <dt class="col-sm-3">Date planifiée début</dt>
+                    <dd class="col-sm-3">@intervention.DatePlanifieeDebut.ToString("dd/MM/yyyy")</dd>
+
+                    @if (intervention.DateEffectiveDebut.HasValue)
+                    {
+                        <dt class="col-sm-3">Date effective début</dt>
+                        <dd class="col-sm-3">@intervention.DateEffectiveDebut.Value.ToString("dd/MM/yyyy")</dd>
+                    }
+
+                    <dt class="col-sm-3">Date planifiée fin</dt>
+                    <dd class="col-sm-3">
+                        @if (intervention.DatePlanifieeFin.HasValue)
+                        {
+                            @intervention.DatePlanifieeFin.Value.ToString("dd/MM/yyyy")
+                        }
+                    </dd>
+
+                    @if (intervention.DateEffectiveFin.HasValue)
+                    {
+                        <dt class="col-sm-3">Date effective fin</dt>
+                        <dd class="col-sm-3">@intervention.DateEffectiveFin.Value.ToString("dd/MM/yyyy")</dd>
+                    }
+
+                    <dt class="col-sm-3">Technicien planifié</dt>
+                    <dd class="col-sm-3">@intervention.TechnicienPlanifie</dd>
+
+                    @if (!string.IsNullOrEmpty(intervention.TechnicienEffectif))
+                    {
+                        <dt class="col-sm-3">Technicien effectif</dt>
+                        <dd class="col-sm-3">@intervention.TechnicienEffectif</dd>
+                    }
+
+                    <dt class="col-sm-3">Statut intervention</dt>
+                    <dd class="col-sm-3">
+                        @if (!string.IsNullOrEmpty(intervention.Statut))
+                        {
+                            var badgeClass = intervention.Statut switch
+                            {
+                                "Planifiée" => "bg-secondary",
+                                "En cours" => "bg-warning text-dark",
+                                "Terminée" => "bg-success",
+                                _ => "bg-secondary"
+                            };
+                            <span class="badge @badgeClass">@intervention.Statut</span>
+                        }
+                    </dd>
+                </dl>
+
+                @* Bouton annuler seulement si aucune date effective n'existe *@
+                @if (!intervention.DateEffectiveDebut.HasValue && !intervention.DateEffectiveFin.HasValue)
+                {
+                    <button class="btn btn-outline-danger mt-3" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        <i class="bi bi-x-circle"></i> Annuler l'intervention
+                    </button>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info mt-3">
+                    Aucune intervention planifiée pour ce besoin.
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+@* Modal de confirmation annulation *@
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-x-circle"></i> Confirmer l'annulation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir annuler cette intervention ?
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="@Url.Action("AnnulerIntervention", "Besoin", new { area = "SuperAdmin", id = intervention?.Id })">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-circle"></i> Confirmer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

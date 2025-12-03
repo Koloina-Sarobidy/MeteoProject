@@ -1,0 +1,405 @@
+@using Microsoft.AspNetCore.Routing.Template
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Détails Station";
+
+    var station = ViewBag.Station as Station;
+    var capteursStation = ViewBag.CapteursStation as List<CapteurStation> ?? new List<CapteurStation>();
+    var alimentationsStation = ViewBag.AlimentationsStation as List<AlimentationStation> ?? new List<AlimentationStation>();
+    var capteurs = ViewBag.Capteurs as List<StationControl.Models.Equipement.Capteur> ?? new List<StationControl.Models.Equipement.Capteur>();
+    var alimentations = ViewBag.Alimentations as List<StationControl.Models.Equipement.Alimentation> ?? new List<StationControl.Models.Equipement.Alimentation>();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="container-fluid py-4">
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-geo-alt"></i> @station.Nom
+            </h5>
+            <button class="btn btn-outline-secondary" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div id="map"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <h6 class="fw-semibold mb-3 text-secondary">Informations de la station</h6>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item"><b>Nom :</b> @station.Nom</li>
+                        <li class="list-group-item"><b>Région :</b> @station.Region?.Libelle</li>
+                        <li class="list-group-item"><b>Latitude :</b> @station.Latitude</li>
+                        <li class="list-group-item"><b>Longitude :</b> @station.Longitude</li>
+                        <li class="list-group-item">
+                            <b>Statut :</b>
+                            @if (station.EstArrete == true)
+                            {
+                                <span class="badge bg-danger">Arrêtée</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                        </li>
+                        <li class="list-group-item">
+                            <b>Etat :</b>
+                            @switch(station.Statut)
+                            {
+                                case "Fonctionnelle":
+                                    <span class="badge bg-success">Fonctionnelle</span>;
+                                    break;
+                                case "Partiellement Fonctionnelle":
+                                    <span class="badge bg-warning">Partiellement Fonctionnelle</span>;
+                                    break;
+                                case "Non Fonctionnelle":
+                                    <span class="badge bg-danger">Non Fonctionnelle</span>;
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">Non Définie</span>;
+                                    break;
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if(station.EstArrete != true)
+    {
+        <!-- Boutons Ajouter -->
+        <div class="d-flex justify-content-end mb-2">
+            <button class="btn btn-primary me-2" id="openAjouterCapteurModalBtn">
+                <i class="bi bi-plus-circle"></i> Ajouter Capteur
+            </button>
+            <button class="btn btn-primary" id="openAjouterAlimentationModalBtn">
+                <i class="bi bi-plus-circle"></i> Ajouter Alimentation
+            </button>
+        </div>
+
+    }
+    
+    <!-- Capteurs -->
+    @if (capteursStation.Count > 0)
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 text-primary"><i class="bi bi-cpu"></i> Capteurs de la station</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Numéro de série</th>
+                            <th>Type de capteur</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var c in capteursStation)
+                    {
+                        var statutLower = c.Statut?.ToLower() ?? "";
+                        if (statutLower == "non fonctionnel")
+                        {
+                            <tr style="cursor:pointer" onclick="location.href='@Url.Action("DetailBesoin", "Besoin", new { area = "SuperAdmin", idEquipement = c.Id, idStation = station.Id })'">
+                                <td>@c.NumSerie</td>
+                                <td>@c.Capteur?.Libelle</td>
+                                <td><span class="badge bg-danger">@c.Statut</span></td>
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr>
+                                <td>@c.NumSerie</td>
+                                <td>@c.Capteur?.Libelle</td>
+                                <td><span class="badge bg-success">Fonctionnel</span></td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-circle"></i> Aucun capteur n’est associé à cette station.
+        </div>
+    }
+
+    <!-- Alimentations -->
+    @if (alimentationsStation.Count > 0)
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 text-primary"><i class="bi bi-lightning-charge"></i> Alimentations de la station</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Numéro de série</th>
+                            <th>Type d’alimentation</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in alimentationsStation)
+                        {
+                            var statutLower = a.Statut?.ToLower() ?? "";
+                            if (statutLower == "non fonctionnel")
+                            {
+                                <tr style="cursor:pointer" onclick="location.href='@Url.Action("DetailBesoin", "Besoin", new { area = "SuperAdmin", idEquipement = a.Id, idStation = station.Id })'">
+                                    <td>@a.NumSerie</td>
+                                    <td>@a.Alimentation?.Libelle</td>
+                                    <td><span class="badge bg-danger">@a.Statut</span></td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td>@a.NumSerie</td>
+                                    <td>@a.Alimentation?.Libelle</td>
+                                    <td><span class="badge bg-success">Fonctionnelle</span></td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-circle"></i> Aucune alimentation n’est associée à cette station.
+        </div>
+    }
+
+    <!-- Bouton Arrêter -->
+    <div class="text-center mt-4">
+        @if (station.EstArrete != true)
+        {
+            <button type="button" class="btn btn-outline-danger btn-lg" id="arreterStationBtn">
+                <i class="bi bi-exclamation-triangle"></i> Arrêter la station
+            </button>
+        }
+    </div>
+</div>
+
+<!-- === Modals === -->
+
+@* Modal arrêt station *@
+<div class="modal fade" id="arreterStationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Confirmation d'arrêt
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="fw-semibold">Tapez <strong>1</strong> pour confirmer :</p>
+                <input id="confirmationInputStation" class="form-control text-center fw-bold fs-5" placeholder="Tapez 1"/>
+                <div id="inputErrorStation" class="text-danger mt-2 d-none fw-semibold">Vous devez taper 1 pour confirmer l'arrêt de cette station !</div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                <form method="post" action="@Url.Action("Arret","Station", new { area="SuperAdmin", id=station.Id })">
+                    <input type="hidden" name="confirmation" id="hiddenConfirmationStation" />
+                    <button type="submit" class="btn btn-outline-danger" id="submitArretBtn"><i class="bi bi-check-circle"></i> Confirmer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Modal Ajouter Capteur *@
+<div class="modal fade" id="ajouterCapteurModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title fw-bold">Ajouter Capteur</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="ajouterCapteurForm" method="post" action="@Url.Action("AjouterCapteur","Station", new { area="SuperAdmin", id=station.Id })">
+                <input type="hidden" name="StationId" value="@station.Id" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Type de Capteur</label>
+                        <select name="CapteurId" class="form-select">
+                            @foreach(var c in capteurs) { <option value="@c.Id">@c.Libelle</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Numéro de série</label>
+                        <input type="text" name="NumSerie" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmerAjouterCapteurBtn"><i class="bi bi-check-circle"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Modal Ajouter Alimentation *@
+<div class="modal fade" id="ajouterAlimentationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title fw-bold">Ajouter Alimentation</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="ajouterAlimentationForm" method="post" action="@Url.Action("AjouterAlimentation","Station", new { area="SuperAdmin", id=station.Id })">
+                <input type="hidden" name="StationId" value="@station.Id" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Type d’Alimentation</label>
+                        <select name="AlimentationId" class="form-select">
+                            @foreach(var a in alimentations) { <option value="@a.Id">@a.Libelle</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Numéro de série</label>
+                        <input type="text" name="NumSerie" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmerAjouterAlimentationBtn"><i class="bi bi-check-circle"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Modal Confirmation Ajout Simple *@
+<div class="modal fade" id="confirmerAjouterModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary" id="confirmModalLabel"><i class="bi bi-exclamation-triangle"></i> Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="fw-semibold">Voulez-vous vraiment ajouter cet élément ?</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmerAjoutFinalBtn"><i class="bi bi-check-circle"></i> Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    string markerColor = station.Statut?.ToLower() switch
+    {
+        "fonctionnelle" => "green",
+        "partiellement fonctionnelle" => "orange",
+        "non fonctionnelle" => "red",
+        _ => station.EstArrete == true ? "red" : "gray"
+    };
+}
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Carte
+    var lat = parseFloat('@(station.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")');
+    var lng = parseFloat('@(station.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")');
+    var map = L.map('map').setView([lat, lng], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.circleMarker([lat, lng], { color: '@markerColor', radius: 10 }).addTo(map);
+
+    // Modal arrêt station
+    const arreterBtn = document.getElementById("arreterStationBtn");
+    const modalArret = new bootstrap.Modal(document.getElementById("arreterStationModal"));
+    const inputStation = document.getElementById("confirmationInputStation");
+    const errorStation = document.getElementById("inputErrorStation");
+    const confirmBtn = document.getElementById("submitArretBtn");
+
+    if (arreterBtn) {
+        arreterBtn.addEventListener("click", () => {
+            inputStation.value = "";
+            errorStation.classList.add("d-none");
+            inputStation.classList.remove("is-invalid");
+            modalArret.show();
+        });
+    }
+
+    inputStation.addEventListener("input", () => {
+        if (inputStation.value.trim() === "1") {
+            errorStation.classList.add("d-none");
+            inputStation.classList.remove("is-invalid");
+        } else {
+            errorStation.classList.remove("d-none");
+            inputStation.classList.add("is-invalid");
+        }
+    });
+
+    confirmBtn.addEventListener("click", function (e) {
+        if (inputStation.value.trim() !== "1") {
+            e.preventDefault();
+            return;
+        }
+        document.getElementById("hiddenConfirmationStation").value = "1";
+    });
+
+    // Modals Ajouter Capteur / Alimentation avec confirmation simple
+    const modalConfirmation = new bootstrap.Modal(document.getElementById("confirmerAjouterModal"));
+    let formAAjouter = null;
+
+    document.getElementById("confirmerAjouterCapteurBtn").addEventListener("click", function () {
+        formAAjouter = document.getElementById("ajouterCapteurForm");
+        modalConfirmation.show();
+    });
+
+    document.getElementById("confirmerAjouterAlimentationBtn").addEventListener("click", function () {
+        formAAjouter = document.getElementById("ajouterAlimentationForm");
+        modalConfirmation.show();
+    });
+
+    document.getElementById("confirmerAjoutFinalBtn").addEventListener("click", function () {
+        if (formAAjouter) formAAjouter.submit();
+    });
+
+    document.getElementById("openAjouterCapteurModalBtn").addEventListener("click",
+        () => new bootstrap.Modal(document.getElementById("ajouterCapteurModal")).show());
+    document.getElementById("openAjouterAlimentationModalBtn").addEventListener("click",
+        () => new bootstrap.Modal(document.getElementById("ajouterAlimentationModal")).show());
+});
+</script>
+
+<style>
+#map { height:650px; width:100%; border-radius:12px; }
+.badge { font-size:0.85rem; }
+</style>
+}

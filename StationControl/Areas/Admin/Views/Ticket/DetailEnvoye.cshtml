@@ -1,0 +1,133 @@
+@model StationControl.Models.Ticket.TicketListItem
+@using StationControl.Models.Crm 
+@using StationControl.Models.Station
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Détails du Ticket";
+
+    var crms = Model.CrmDestinataire ?? new List<Crm>();
+    var stations = Model.StationDestinataire ?? new List<Station>();
+    var piecesJointes = ViewBag.PiecesJointes as List<StationControl.Models.Ticket.TicketPieceJointe> 
+                        ?? new List<StationControl.Models.Ticket.TicketPieceJointe>();
+    var vuesList = ViewBag.Vues as List<StationControl.Models.Ticket.TicketVue> ?? new List<StationControl.Models.Ticket.TicketVue>();
+
+    Func<bool?, string> badgeSuperAdmin = sa => sa == true ? "Chef SMIT" : "Aucun";
+    Func<bool, string> statutBadgeClass = s => s ? "bg-success" : "bg-warning text-dark";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-chat-dots me-2"></i> Détails du Ticket
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Objet du ticket -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Objet du ticket</label>
+                <input type="text" class="form-control" value="@Model.Objet" readonly />
+            </div>
+
+            <!-- Message -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Message</label>
+                <textarea class="form-control" rows="4" readonly>@Model.Description</textarea>
+            </div>
+
+            <!-- Pièces jointes -->
+            @if (piecesJointes.Any())
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Pièces jointes</label>
+                    <div>
+                        @foreach (var piece in piecesJointes)
+                        {
+                            <a href="@Url.Action("Download", "Ticket", new { fileName = piece.Url })" class="d-block mb-1">
+                                <i class="bi bi-paperclip me-1"></i> @piece.Url
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Destinataires CRM -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Destinataires CRM</label>
+                <div>
+                    @if (crms.Any())
+                    {
+                        @foreach (var crm in crms)
+                        {
+                            <span class="badge bg-primary me-1">@crm.Libelle</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucun CRM</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Destinataires Stations -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Destinataires Station</label>
+                <div>
+                    @if (stations.Any())
+                    {
+                        @foreach (var station in stations)
+                        {
+                            <span class="badge bg-info text-dark me-1">@station.Nom</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucune Station</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Autres Destinataires (SuperAdmin) -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Autres Destinataires</label>
+                <div>
+                    <span class="badge bg-info text-dark me-1">@badgeSuperAdmin(Model.SuperAdmin)</span>
+                </div>
+            </div>
+
+            <!-- Visibilités et statut vu -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Visibilités</label>
+                <div>
+                    @if (vuesList.Any())
+                    {
+                        foreach (var vue in vuesList)
+                        {
+                            var destinataire =
+                                vue.CrmId != null ? vue.CrmId.Libelle :
+                                vue.StationId != null ? vue.StationId.Nom :
+                                vue.SuperAdmin == true ? "Chef SMIT" :
+                                "Inconnu";
+
+                            var statut = vue.DateVue != DateTime.MinValue;
+                            var badgeClass = statutBadgeClass(statut);
+
+                            <span class="badge @badgeClass me-1">@destinataire : @(statut ? "Oui" : "Non")</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Aucun</span>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

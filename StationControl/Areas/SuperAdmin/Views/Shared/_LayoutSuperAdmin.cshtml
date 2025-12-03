@@ -1,0 +1,381 @@
+@using StationControl.Models.Station
+@using StationControl.Models.Auth
+@inject IConfiguration Configuration
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Chef SMIT</title>
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/css/layout.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="~/img/Logo.png" />
+
+    <style>
+        /* Chatbot styles */
+        #chatbotButton { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #008B8B; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1050; font-size: 28px; }
+        #chatbotWindow { position: fixed; bottom: 90px; right: 20px; width: 340px; max-height: 420px; background: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: none; flex-direction: column; overflow: hidden; z-index: 1050; }
+        #chatbotHeader { background: #008B8B; color: #fff; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+        #chatbotClose { cursor: pointer; font-size: 18px; opacity: 0.9; }
+        #chatbotContent { flex: 1; padding: 10px; overflow-y: auto; font-size: 14px; background: #fafafa; }
+        .chatbot-quick-questions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-bottom: 1px solid #eee; background: #fff; }
+        .chatbot-quick-questions div { background-color: #f0f0f0; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .chatbot-quick-questions div:hover { background-color: #008B8B; color: white; }
+        #chatbotForm { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #eee; background: #fff; }
+        #chatbotInput { flex: 1; border: 1px solid #ddd; padding: 8px 10px; border-radius: 6px; background: #f7f7f7; }
+        #chatbotSend { background: #008B8B; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .chatbot-result { margin-bottom: 6px; padding: 6px; background: #e9f7f7; border-radius: 4px; font-size: 13px; }
+        .chatbot-error { color: red; font-weight: bold; }
+
+        /* --- Autres notifications styles --- */
+        #other-notif-btn {
+            position: relative;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #555;
+        }
+        #other-notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -6px;
+            background: red;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            display: none;
+        }
+        #other-notif-panel {
+            position: absolute;
+            top: 35px;
+            right: 0;
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 10px;
+            display: none;
+            z-index: 99999;
+        }
+        #other-notif-panel ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="sidebar-brand">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>StationControl</span>
+            </a>
+        </div>
+        <nav class="nav-section">
+            <ul class="sidebar-nav">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a href="@Url.Action("Dashboard", "Dashboard", new { area = "SuperAdmin" })" class="nav-link active">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <!-- CRM -->
+                <li class="nav-item">
+                    <a href="#crmMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-people-fill"></i> CRM
+                    </a>
+                    <ul class="collapse submenu" id="crmMenu">
+                        <li><a href="@Url.Action("Liste", "Crm", new { area = "SuperAdmin" })" class="nav-link">Liste</a></li>
+                        <li><a href="@Url.Action("Ajout", "Crm", new { area = "SuperAdmin" })" class="nav-link">Ajout</a></li>
+                    </ul>
+                </li>
+                <!-- Equipements -->
+                <li class="nav-item">
+                    <a href="#equipementMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-cpu-fill"></i> Equipements
+                    </a>
+                    <ul class="collapse submenu" id="equipementMenu">
+                        <li><a href="@Url.Action("ListeCapteur", "Equipement", new { area = "SuperAdmin" })" class="nav-link">Config Capteurs</a></li>
+                        <li><a href="@Url.Action("ListeAlimentation", "Equipement", new { area = "SuperAdmin" })" class="nav-link">Config Alimentations</a></li>
+                    </ul>
+                </li>
+                <!-- Stations -->
+                <li class="nav-item">
+                    <a href="#stationMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-diagram-3-fill"></i> Stations
+                    </a>
+                    <ul class="collapse submenu" id="stationMenu">
+                        <li><a href="@Url.Action("Liste", "Station", new { area = "SuperAdmin" })" class="nav-link">Liste</a></li>
+                        <li><a href="@Url.Action("Ajout", "Station", new { area = "SuperAdmin" })" class="nav-link">Ajout</a></li>
+                        <li><a href="@Url.Action("Liste", "Brand", new { area = "SuperAdmin" })" class="nav-link">Brand</a></li>
+                    </ul>
+                </li>
+                <!-- Interventions -->
+                <li class="nav-item">
+                    <a href="#interventionsMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-tools"></i> Interventions
+                    </a>
+                    <ul class="collapse submenu" id="interventionsMenu">
+                        <li><a href="@Url.Action("ListeRenvoye", "Besoin", new { area = "SuperAdmin" })" class="nav-link">Besoins</a></li>
+                        <li><a href="@Url.Action("Preventive", "Intervention", new { area = "SuperAdmin" })" class="nav-link">Préventives</a></li>
+                        <li><a href="@Url.Action("Curative", "Intervention", new { area = "SuperAdmin" })" class="nav-link">Curatives</a></li>
+                    </ul>
+                </li>
+                <!-- Personnel -->
+                <li class="nav-item">
+                    <a href="#personnelMenu" class="nav-link has-dropdown collapsed" data-bs-toggle="collapse">
+                        <i class="bi bi-person-badge-fill"></i> Personnel
+                    </a>
+                    <ul class="collapse submenu" id="personnelMenu">
+                        <li><a href="@Url.Action("Inscription", "Personnel", new { area = "SuperAdmin" })" class="nav-link">Inscription</a></li>
+                        <li><a href="@Url.Action("ListeResponsablesCrm", "Personnel", new { area = "SuperAdmin" })" class="nav-link">CRMs</a></li>
+                        <li><a href="@Url.Action("ListeObservateurs", "Personnel", new { area = "SuperAdmin" })" class="nav-link">Observateurs</a></li>
+                    </ul>
+                </li>
+                <!-- Rapports -->
+                <li class="nav-item">
+                    <a href="@Url.Action("RapportMensuelStation", "Rapport", new { area = "SuperAdmin" })" class="nav-link">
+                        <i class="bi bi-file-earmark-text"></i> Rapports
+                    </a>
+                </li>
+                <!-- Tickets -->
+                <li class="nav-item">
+                    <a href="@Url.Action("Create", "Ticket", new { area = "SuperAdmin" })" class="nav-link">
+                        <i class="bi bi-chat-dots"></i> Tickets
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main content -->
+    <main class="main-content">
+        <header class="header d-flex justify-content-between align-items-center">
+            <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
+            <div class="header-actions d-flex align-items-center gap-3">
+
+                <!-- Notifications tickets -->
+                <a href="/SuperAdmin/Ticket/ListeTicket" class="icon-btn text-decoration-none">
+                    <i class="bi bi-chat-dots"></i>
+                    <span id="badge-notification" class="badge-notification" data-superadmin="true">
+                        @await Component.InvokeAsync("Notifications", new { superAdmin = true })
+                    </span>
+                </a>
+
+                <!-- Autres notifications -->
+                <div class="position-relative ms-3">
+                    <i id="other-notif-btn" class="bi bi-bell"></i>
+                    <span id="other-notif-badge"></span>
+                    <div id="other-notif-panel">
+                        <strong>Notifications</strong>
+                        <hr>
+                        <div id="other-notif-content">Chargement...</div>
+                    </div>
+                </div>
+
+                <!-- User profile -->
+                <div class="dropdown user-profile">
+                    <a class="d-flex align-items-center text-decoration-none" href="#" id="userDropdown" data-bs-toggle="dropdown">
+                        @if(ViewBag.Utilisateur != null && !string.IsNullOrEmpty(ViewBag.Utilisateur.PhotoProfil)){
+                            <img src="~/uploads/profiles/@ViewBag.Utilisateur.PhotoProfil" alt="User" class="user-avatar rounded-circle me-2">
+                        } else if(ViewBag.Utilisateur != null){
+                            <img src="https://ui-avatars.com/api/?name=@ViewBag.Utilisateur.Prenom+@ViewBag.Utilisateur.Nom&background=008B8B&color=fff" alt="User" class="user-avatar rounded-circle me-2">
+                        }
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        @if(ViewBag.Utilisateur != null){
+                            <li><a class="dropdown-item disabled" href="#"><i class="bi bi-person-fill me-2"></i> @ViewBag.Utilisateur.Nom @ViewBag.Utilisateur.Prenom (@ViewBag.Utilisateur.Role?.Libelle)</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Profile", "Auth", new { area = "SuperAdmin" })"><i class="bi bi-person-fill me-2"></i> Informations personnelles</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("HistoriqueConnexion", "Auth", new { area = "SuperAdmin" })"><i class="bi bi-clock-history me-2"></i> Historique de connexion</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("RedirectStatut", "Utilisateur", new { area = "SuperAdmin" })"><i class="bi bi-person-gear me-2"></i> Statut</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a href="#" class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="bi bi-box-arrow-right me-2"></i> Se déconnecter</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Logout Modal -->
+        <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary" id="logoutModalLabel"><i class="bi bi-exclamation-triangle me-2"></i> Confirmation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">Voulez-vous vraiment vous déconnecter ?</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i> Annuler</button>
+                        <a href="@Url.Action("Logout", "Auth", new { area = "SuperAdmin" })" class="btn btn-primary"><i class="bi bi-box-arrow-right me-1"></i> Déconnexion</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">@RenderBody()</div>
+    </main>
+
+    <!-- Chatbot flottant -->
+    <div id="chatbotButton" title="Assistant maintenance"><i class="bi bi-chat-dots"></i></div>
+    <div id="chatbotWindow" role="dialog" aria-modal="false" aria-labelledby="chatbotHeader">
+        <div id="chatbotHeader">
+            <span id="chatbotTitle">Assistant rapide</span>
+            <span id="chatbotClose" title="Fermer"><i class="bi bi-x-lg"></i></span>
+        </div>
+        <div class="chatbot-quick-questions" role="list">
+            <div data-question="Fonctionnelle">Quelles sont les stations fonctionnelles ?</div>
+            <div data-question="Non Fonctionnelle">Quelles sont les stations non fonctionnelles ?</div>
+            <div data-question="Partiellement Fonctionnelle">Quelles sont les stations partiellement fonctionnelles ?</div>
+        </div>
+        <div id="chatbotContent"><div><em>Bienvenue ! Cliquez sur une question ci-dessus.</em></div></div>
+        <form id="chatbotForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="text" id="chatbotInput" name="question" placeholder="Sélectionnez une question..." readonly aria-readonly="true" />
+            <button type="submit" id="chatbotSend">Envoyer</button>
+        </form>
+    </div>
+
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Sidebar toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        if(menuToggle){ menuToggle.addEventListener('click', () => { sidebar.classList.toggle('show'); sidebarOverlay.classList.toggle('show'); }); }
+        if(sidebarOverlay){ sidebarOverlay.addEventListener('click', () => { sidebar.classList.remove('show'); sidebarOverlay.classList.remove('show'); }); }
+        if (window.innerWidth <= 991) {
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (!this.classList.contains('has-dropdown')) {
+                        sidebar.classList.remove('show');
+                        sidebarOverlay.classList.remove('show');
+                    }
+                });
+            });
+        }
+
+        // ================= NOTIFICATIONS ==================
+        function updateTicketNotifications() {
+            const badge = document.getElementById("badge-notification");
+            if (!badge) return;
+            const superAdmin = badge.getAttribute("data-superadmin") || false;
+            fetch(`/StationControl/Notification/Count?superAdmin=${superAdmin}`)
+                .then(r => r.text())
+                .then(count => badge.textContent = count || "0")
+                .catch(err => console.error("Erreur notifications tickets:", err));
+        }
+        setInterval(updateTicketNotifications, 10000);
+        updateTicketNotifications();
+
+        // ================= AUTRES NOTIFICATIONS ==================
+        const otherBtn = document.getElementById("other-notif-btn");
+        const otherPanel = document.getElementById("other-notif-panel");
+        const otherBadge = document.getElementById("other-notif-badge");
+        const otherContent = document.getElementById("other-notif-content");
+
+        otherBtn.addEventListener("click", () => {
+            otherPanel.style.display = otherPanel.style.display === "block" ? "none" : "block";
+        });
+        document.addEventListener("click", (e) => {
+            if (!otherPanel.contains(e.target) && !otherBtn.contains(e.target)) {
+                otherPanel.style.display = "none";
+            }
+        });
+
+        async function loadOtherNotifications() {
+            try {
+                const response = await fetch("/SuperAdmin/Notifications/BesoinsRenvoyes");
+                const data = await response.json();
+                if (data.length === 0) {
+                    otherBadge.style.display = "none";
+                    otherContent.innerHTML = "<em>Aucune notification</em>";
+                    return;
+                }
+                otherBadge.style.display = "inline-block";
+                otherBadge.textContent = data.length;
+                otherContent.innerHTML =
+                    "<ul>" + data.map(n => `<li>${n.message}</li>`).join('') + "</ul>";
+            } catch {
+                otherContent.innerHTML = "<em>Erreur lors du chargement</em>";
+            }
+        }
+        loadOtherNotifications();
+        setInterval(loadOtherNotifications, 30000);
+
+        // Chatbot behaviour
+        const chatbotButton = document.getElementById('chatbotButton');
+        const chatbotWindow = document.getElementById('chatbotWindow');
+        const chatbotClose = document.getElementById('chatbotClose');
+        const chatbotInput = document.getElementById('chatbotInput');
+        const chatbotForm = document.getElementById('chatbotForm');
+        const chatbotContent = document.getElementById('chatbotContent');
+        const quickQuestions = document.querySelectorAll('.chatbot-quick-questions div');
+
+        chatbotButton.addEventListener('click', () => { chatbotWindow.style.display = chatbotWindow.style.display === 'flex' ? 'none' : 'flex'; });
+        chatbotClose.addEventListener('click', () => chatbotWindow.style.display = 'none');
+
+        quickQuestions.forEach(q => {
+            q.addEventListener('click', () => {
+                chatbotInput.value = q.getAttribute('data-question') || q.textContent;
+                quickQuestions.forEach(x => x.style.opacity = '1');
+                q.style.opacity = '0.7';
+            });
+        });
+
+        chatbotForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!chatbotInput.value.trim()) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            fetch('/SuperAdmin/Chatbot/HandleQuestion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ question: chatbotInput.value })
+            })
+            .then(res => res.json())
+            .then(data => {
+                chatbotContent.innerHTML = '';
+                if (data && data.success && data.stations && data.stations.length > 0) {
+                    data.stations.forEach(station => {
+                        const div = document.createElement('div');
+                        div.classList.add('chatbot-result');
+                        div.textContent = `Station: ${station.nom}, Statut: ${station.statut}`;
+                        chatbotContent.appendChild(div);
+                    });
+                } else {
+                    chatbotContent.innerHTML = `<div class="chatbot-error">${data.message || 'Aucune station trouvée.'}</div>`;
+                }
+            })
+            .catch(err => {
+                chatbotContent.innerHTML = '<div class="chatbot-error">Erreur lors de la récupération des données.</div>';
+                console.error(err);
+            });
+        });
+
+        chatbotInput.addEventListener('keydown', e => e.preventDefault());
+        chatbotInput.addEventListener('input', e => e.preventDefault());
+
+        function adjustChatbotForWidth() {
+            const w = window.innerWidth;
+            if (w < 480) { chatbotWindow.style.width = '92%'; chatbotWindow.style.right = '4%'; chatbotWindow.style.bottom = '70px'; }
+            else if (w < 768) { chatbotWindow.style.width = '80%'; chatbotWindow.style.right = '10%'; chatbotWindow.style.bottom = '80px'; }
+            else { chatbotWindow.style.width = '340px'; chatbotWindow.style.right = '20px'; chatbotWindow.style.bottom = '90px'; }
+        }
+        window.addEventListener('resize', adjustChatbotForWidth);
+        adjustChatbotForWidth();
+    </script>
+
+    @RenderSection("Scripts", required: false)
+    @RenderSection("Styles", required: false)
+</body>
+</html>

@@ -1,0 +1,297 @@
+@using StationControl.Models.Station
+@using StationControl.Models.Besoin
+@{
+    Layout = "~/Areas/Observateur/Views/Shared/_LayoutObservateur.cshtml";
+    ViewData["Title"] = "Dashboard Station";
+
+    var station = ViewBag.Station as Station;
+    var capteursStation = ViewBag.CapteursStation as List<CapteurStation> ?? new List<CapteurStation>();
+    var alimentationsStation = ViewBag.AlimentationsStation as List<AlimentationStation> ?? new List<AlimentationStation>();
+    var historique = ViewBag.HistoriqueBesoins as List<BesoinStation> ?? new List<BesoinStation>();
+
+    int capteursFonctionnels = capteursStation.Count(c => c.Statut?.ToLower() == "fonctionnel");
+    int alimentationsFonctionnelles = alimentationsStation.Count(a => a.Statut?.ToLower() == "fonctionnel");
+    int anneeEnCours = DateTime.Now.Year;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="container-fluid py-4">
+
+    <!-- KPI -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 h-100 bg-white clickable-kpi" data-type="capteurs">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-secondary mb-1"><i class="bi bi-cpu"></i> Capteurs</h6>
+                        <h4 class="fw-bold" id="kpiCapteurs">@capteursFonctionnels / @capteursStation.Count</h4>
+                        <small class="text-success">Fonctionnels</small>
+                    </div>
+                    <i class="bi bi-chevron-right fs-3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-0 h-100 bg-white clickable-kpi" data-type="alimentations">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-secondary mb-1"><i class="bi bi-lightning-charge"></i> Alimentations</h6>
+                        <h4 class="fw-bold" id="kpiAlimentations">@alimentationsFonctionnelles / @alimentationsStation.Count</h4>
+                        <small class="text-success">Fonctionnels</small>
+                    </div>
+                    <i class="bi bi-chevron-right fs-3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte + infos station -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary"><i class="bi bi-geo-alt"></i> @station.Nom</h5>
+            <button class="btn btn-outline-secondary" onclick="history.back()"><i class="bi bi-arrow-left"></i> Retour</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-8"><div id="map" style="height:400px;"></div></div>
+                <div class="col-md-4">
+                    <h6 class="fw-semibold mb-3 text-secondary">Informations de la station</h6>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item"><b>Nom :</b> @station.Nom</li>
+                        <li class="list-group-item"><b>Région :</b> @station.Region?.Libelle</li>
+                        <li class="list-group-item"><b>Latitude :</b> @station.Latitude</li>
+                        <li class="list-group-item"><b>Longitude :</b> @station.Longitude</li>
+                        <li class="list-group-item">
+                            <b>Statut :</b>
+                            @if (station.EstArrete == true){
+                                <span class="badge bg-danger">Arrêtée</span>
+                            } else {
+                                <span class="badge bg-success">Active</span>
+                            }
+                        </li>
+                        <li class="list-group-item">
+                            <b>État :</b>
+                            @switch(station.Statut)
+                            {
+                                case "Fonctionnelle": <span class="badge bg-success">Fonctionnelle</span>; break;
+                                case "Partiellement Fonctionnelle": <span class="badge bg-warning">Partiellement Fonctionnelle</span>; break;
+                                case "Non Fonctionnelle": <span class="badge bg-danger">Non Fonctionnelle</span>; break;
+                                default: <span class="badge bg-secondary">Non Définie</span>; break;
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section filtrée -->
+    <div id="sectionDetails" class="mb-4"></div>
+
+    <!-- HISTORIQUE DES BESOINS -->
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header bg-white">
+            <h5 class="text-primary mb-0"><i class="bi bi-clock-history"></i> Historique des besoins – @anneeEnCours</h5>
+        </div>
+        <div class="card-body" id="historiqueBesoins">
+            @if (!historique.Any())
+            {
+                <div class="alert alert-info text-center">
+                    Aucun historique disponible pour cette station.
+                </div>
+            }
+            else
+            {
+                <ul class="timeline list-unstyled">
+                    @foreach (var h in historique)
+                    {
+                        <li class="mb-4">
+                            <div>
+                                <span class="badge bg-primary">@h.Date.ToString("dd MMM yyyy")</span>
+                                <p class="mt-2 mb-1"><b>Problème :</b> @h.DescriptionProbleme</p>
+                                @if (h.EquipementBesoin != null)
+                                {
+                                    <p class="text-muted small mb-1"><b>Demande :</b> @h.EquipementBesoin.Libelle</p>
+                                }
+                                @if (h.CapteurStation != null)
+                                {
+                                    <p class="text-muted small mb-1"><b>Capteur concerné :</b> @h.CapteurStation.Capteur?.Libelle (@h.CapteurStation.NumSerie)</p>
+                                }
+                                @if (h.AlimentationStation != null)
+                                {
+                                    <p class="text-muted small mb-1"><b>Alimentation :</b> @h.AlimentationStation.Alimentation?.Libelle (@h.AlimentationStation.NumSerie)</p>
+                                }
+                                <p class="mt-2">
+                                    @if (h.EstRenvoye)
+                                    {
+                                        <span class="badge bg-info">Renvoyé au Chef SMIT</span>
+                                    }
+                                    @if (h.EstTraite)
+                                    {
+                                        <span class="badge bg-success">Traité</span>
+                                    }
+                                    @if (!h.EstTraite)
+                                    {
+                                        <span class="badge bg-warning">Pas encore traité</span>
+                                    }
+                                    @if (h.EstComplete)
+                                    {
+                                        <span class="badge bg-success">Traité</span>
+                                    }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+</div>
+
+@{
+    string markerColor = station.Statut?.ToLower() switch
+    {
+        "fonctionnelle" => "green",
+        "partiellement fonctionnelle" => "orange",
+        "non fonctionnelle" => "red",
+        _ => station.EstArrete == true ? "red" : "gray"
+    };
+}
+
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    var lat = parseFloat('@(station.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")');
+    var lng = parseFloat('@(station.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")');
+
+    var map = L.map('map').setView([lat, lng], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    var marker = L.circleMarker(
+        [lat, lng], 
+        { 
+            color: '@(markerColor)', 
+            radius: 10 
+        }
+    ).addTo(map);
+
+
+    var capteurs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(capteursStation));
+    var alimentations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(alimentationsStation));
+
+    function showSection(type, dataSource = null) {
+        var section = document.getElementById('sectionDetails');
+        section.innerHTML = '';
+        var data = dataSource ? (type==='capteurs'?dataSource.CapteursStation:dataSource.AlimentationsStation) : (type === 'capteurs' ? capteurs : alimentations);
+
+        if(data.length === 0){
+            section.innerHTML = '<div class="alert alert-warning">Aucun élément trouvé.</div>';
+            return;
+        }
+
+        var table = '<div class="card shadow-sm border-0"><div class="card-header bg-white"><h6 class="mb-0 text-primary">' 
+                    + (type === "capteurs" ? '<i class="bi bi-cpu"></i> Capteurs' : '<i class="bi bi-lightning-charge"></i> Alimentations') 
+                    + '</h6></div><div class="card-body">'
+                    + '<table class="table table-hover table-sm align-middle"><thead class="table-light">'
+                    + '<tr><th>Numéro de série</th><th>Type</th><th>Statut</th></tr></thead><tbody>';
+
+        data.forEach(function(d){
+            var statutLower = d.Statut?.toLowerCase();
+            var statutBadge = statutLower === "fonctionnel" 
+                ? '<span class="badge bg-success">Fonctionnel</span>' 
+                : '<span class="badge bg-danger">' + d.Statut + '</span>';
+
+            var libelle = d.Capteur?.Libelle ?? d.Alimentation?.Libelle ?? "-";
+
+            var rowStart = statutLower !== "fonctionnel"
+                ? '<tr onclick="location.href=\'/Observateur/Curative/DetailBesoin/' + d.Id + '\' " style="cursor:pointer; color:red">'
+                : '<tr>';
+
+            table += rowStart + '<td>' + d.NumSerie + '</td><td>' + libelle + '</td><td>' + statutBadge + '</td></tr>';
+        });
+
+        table += '</tbody></table></div></div>';
+        section.innerHTML = table;
+        section.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.querySelectorAll('.clickable-kpi').forEach(function(div){
+        div.addEventListener('click', function(){
+            var type = this.getAttribute('data-type');
+            showSection(type);
+        });
+    });
+
+    showSection('capteurs');
+
+    function updateDashboard() {
+        fetch('@Url.Action("RealtimeData", "Dashboard", new { area = "Observateur" })')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('kpiCapteurs').textContent = data.CapteursStation.filter(c => c.Statut?.toLowerCase() === "fonctionnel").length + " / " + data.CapteursStation.length;
+                document.getElementById('kpiAlimentations').textContent = data.AlimentationsStation.filter(a => a.Statut?.toLowerCase() === "fonctionnel").length + " / " + data.AlimentationsStation.length;
+
+                var section = document.getElementById('sectionDetails');
+                if(section.innerHTML.trim() !== '') {
+                    var type = section.querySelector('table').id.includes('capteurs') ? 'capteurs' : 'alimentations';
+                    showSection(type, data);
+                }
+
+                // Map
+                if(data.Station?.Statut){
+                    var color = data.Station.Statut.toLowerCase() === "fonctionnelle" ? "green" : "red";
+                    marker.setStyle({ color: color });
+                }
+            })
+            .catch(err => console.error("Erreur RealtimeData :", err));
+    }
+
+    setInterval(updateDashboard, 30000); 
+});
+</script>
+}
+
+@section Styles {
+<style>
+.clickable-kpi {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.clickable-kpi:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.timeline li {
+    border-left: 3px solid #0d6efd;
+    padding-left: 15px;
+    position: relative;
+}
+.timeline li::before {
+    content: "";
+    position: absolute;
+    width: 12px; height: 12px;
+    background: #0d6efd;
+    border-radius: 50%;
+    left: -6px;
+    top: 4px;
+}
+</style>
+}

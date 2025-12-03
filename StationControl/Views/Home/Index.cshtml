@@ -1,0 +1,103 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Sélection du rôle utilisateur - StationControl";
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="~/css/index.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="~/img/Logo.png" />
+</head>
+<body>
+    <div class="role-selection-wrapper">
+        <div class="cards-container">
+            <div class="role-card" data-role="chef-smit" onclick="selectRole(this)" role="button" tabindex="0">
+                <div class="icon-wrapper"><i class="bi bi-gear-fill"></i></div>
+                <h3>Chef SMIT</h3>
+            </div>
+
+            <div class="role-card" data-role="responsable-crm" onclick="selectRole(this)" role="button" tabindex="0">
+                <div class="icon-wrapper"><i class="bi bi-pencil-fill"></i></div>
+                <h3>Responsable CRM</h3>
+            </div>
+
+            <div class="role-card selected" data-role="observateur" onclick="selectRole(this)" role="button" tabindex="0">
+                <div class="icon-wrapper"><i class="bi bi-eye-fill"></i></div>
+                <h3>Observateur</h3>
+            </div>
+        </div>
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-1"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        }
+
+        <div class="action-buttons mt-4">
+            <button type="button" class="btn-back" onclick="goBack()">
+                <i class="bi bi-arrow-left me-2"></i>RETOUR
+            </button>
+            <button type="button" class="btn-continue" onclick="continueToNext()">
+                CONTINUER
+            </button>
+        </div>
+    </div>
+
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedRole = 'observateur';
+
+        function selectRole(element) {
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedRole = element.getAttribute('data-role');
+        }
+
+        document.querySelectorAll('.role-card').forEach(card => {
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault(); 
+                    selectRole(this);
+                }
+            });
+        });
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function continueToNext() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/Auth/RedirectByRole';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'role';
+            input.value = selectedRole;
+
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+</body>
+</html>

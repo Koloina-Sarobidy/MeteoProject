@@ -1,0 +1,118 @@
+@* @using StationControl.Models.Station
+@using StationControl.Models.Inventaire
+@model StationControl.Models.Station.StationBesoinsViewModel
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Besoins de la station";
+    var techniciens = ViewBag.Techniciens as List<StationControl.Models.Technicien.Technicien>; 
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-exclamation-triangle me-2"></i> Besoins de la station @Model.Station.Nom
+            </h5>
+        </div>
+
+        <div class="card-body">
+            @if (Model.Besoins == null || !Model.Besoins.Any())
+            {
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Tous les équipements de cette station sont fonctionnels.
+                </div>
+            }
+            else
+            {
+                <form action="/Admin/Intervention/PlanifierBesoins" method="post">
+                    <div class="mb-3 row">
+                        <input type="hidden" name="stationId" value="@Model.Station.Id" />
+
+                        <label class="col-sm-2 col-form-label">Date prévue début</label>
+                        <div class="col-sm-4">
+                            <input type="date" name="dateDebut" class="form-control" required />
+                        </div>
+                        <label class="col-sm-2 col-form-label">Date prévue fin</label>
+                        <div class="col-sm-4">
+                            <input type="date" name="dateFin" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-striped table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:5%">
+                                        <input type="checkbox" id="selectAll" onclick="toggleAll()" />
+                                    </th>
+                                    <th style="width:20%">Équipement</th>
+                                    <th style="width:20%">Besoin</th>
+                                    <th style="width:30%">Description du problème</th>
+                                    <th style="width:25%">Technicien</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Besoins.Count; i++)
+                                {
+                                    var besoin = Model.Besoins[i];
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="BesoinIds" value="@besoin.EquipementStationId" class="selectRow" onchange="toggleTechnicien(this, @i)" />
+                                        </td>
+                                        <td>@besoin.EquipementStationId</td>
+                                        <td>@(besoin.EquipementBesoin?.Libelle ?? "-")</td>
+                                        <td>@besoin.DescriptionProbleme</td>
+                                        <td>
+                                            <select name="TechnicienIds[@i]" class="form-select technicienSelect" style="display:none;">
+                                                <option value="">-- Sélectionner --</option>
+                                                @if (techniciens != null)
+                                                {
+                                                    foreach (var tech in techniciens)
+                                                    {
+                                                        <option value="@tech.Id">@tech.Nom - @tech.Prenom</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-calendar-event me-2"></i> Planifier
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleAll() {
+            const master = document.getElementById("selectAll");
+            const checkboxes = document.querySelectorAll(".selectRow");
+            checkboxes.forEach((cb, index) => {
+                cb.checked = master.checked;
+                toggleTechnicien(cb, index);
+            });
+        }
+
+        function toggleTechnicien(checkbox, index) {
+            const row = checkbox.closest("tr");
+            const select = row.querySelector(".technicienSelect");
+            if (checkbox.checked) {
+                select.style.display = "block";
+            } else {
+                select.style.display = "none";
+                select.selectedIndex = 0;
+            }
+        }
+    </script>
+} *@

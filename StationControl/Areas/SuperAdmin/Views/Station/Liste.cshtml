@@ -1,0 +1,203 @@
+@using Microsoft.AspNetCore.Mvc.ModelBinding
+@using StationControl.Models.Crm
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Liste Stations";
+
+    var regions = ViewBag.Regions as IEnumerable<Region> ?? new List<Region>();
+}
+
+<!-- Affichage des messages TempData -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-list"></i> Liste des Stations
+            </h5>
+            <div>
+                <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </button>
+                <a href="@Url.Action("Ajout", "Station", new { area = "SuperAdmin" })" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nouvelle Station
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <form method="get" class="row g-3 mb-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Nom de la station</label>
+                    <input type="text" name="Nom" value="@ViewData["Nom"]" class="form-control" placeholder="Ex: Station Antananarivo" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Brand</label>
+                    <select name="BrandId" class="form-select">
+                        <option value="">-- Tous --</option>
+                        @foreach (var brand in ViewBag.Brands as List<Brand>)
+                        {
+                            <option value="@brand.Id" @(ViewData["BrandId"] == brand.Id.ToString() ? "selected" : "")>@brand.Nom</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Région</label>
+                    <select name="RegionId" class="form-select">
+                        <option value="">-- Toutes --</option>
+                        @foreach (var region in regions)
+                        {
+                            <option value="@region.Id" @(ViewData["RegionId"]?.ToString() == region.Id.ToString() ? "selected" : "")>@region.Libelle</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">CRM</label>
+                    <select name="CrmId" class="form-select">
+                        <option value="">-- Tous --</option>
+                        @foreach (var crm in ViewBag.Crms as List<Crm>)
+                        {
+                            <option value="@crm.Id" @(ViewData["CrmId"] == crm.Id.ToString() ? "selected" : "")>@crm.Libelle</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Statut</label>
+                    <select name="Statut" class="form-select">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="false" @(ViewData["Statut"] == "false" ? "selected" : "")>En cours</option>
+                        <option value="true" @(ViewData["Statut"] == "true" ? "selected" : "")>Arrêtée</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Date Début</label>
+                    <input type="date" name="DateDebut" value="@ViewData["DateDebut"]" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date Fin</label>
+                    <input type="date" name="DateFin" value="@ViewData["DateFin"]" class="form-control" />
+                </div>
+
+                <div class="col-md-5 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100 me-2">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                    <a href="@Url.Action("Liste", "Station", new { area = "SuperAdmin" })" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+
+            <br /><br />
+
+            @if (ViewBag.Stations != null && (ViewBag.Stations as List<Station>).Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="min-width: 200px; white-space: nowrap;">Nom de la station</th>
+                                <th>Etat</th>
+                                <th>Statut</th>
+                                <th>Brand</th>
+                                <th>Region</th>
+                                <th>Crm</th>
+                                <th>Type Station</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th style="width:120px; white-space: nowrap;">Date Début</th>
+                                <th style="width:120px; white-space: nowrap;">Date Fin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var station in ViewBag.Stations as List<Station>)
+                            {
+                                <tr class="station-row" data-stationid="@station.Id" style="cursor:pointer;">
+                                    <td>@station.Nom</td>
+                                    <td>
+                                        @if (station.Statut == "Fonctionnelle")
+                                        {
+                                            <span class="badge bg-success">Fonctionnelle</span>
+                                        }
+                                        else if (station.Statut == "Partiellement Fonctionnelle")
+                                        {
+                                            <span class="badge bg-warning">Partiellement Fonctionnelle</span>
+                                        }
+                                        else if (station.Statut == "Non Fonctionnelle")
+                                        {
+                                            <span class="badge bg-danger">Non Fonctionnelle</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Non Définie</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (station.EstArrete == true)
+                                        {
+                                            <span class="badge bg-danger">Arrêtée</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </td>
+                                    <td>@station.Brand?.Nom</td>
+                                    <td>@station.Region?.Libelle</td>
+                                    <td>@station.Crm?.Libelle</td>
+                                    <td>@station.TypeStation?.Libelle</td>
+                                    <td>@station.Latitude</td>
+                                    <td>@station.Longitude</td>
+                                    <td>@station.DateDebut.ToString("dd/MM/yyyy")</td>
+                                    <td>@(station.DateFin.HasValue ? station.DateFin.Value.ToString("dd/MM/yyyy") : "")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Aucune Station disponible.</p>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".station-row").forEach(row => {
+            row.addEventListener("click", function() {
+                const stationId = this.getAttribute("data-stationid");
+                if (stationId) {
+                    window.location.href = '@Url.Action("Details", "Station", new { area = "SuperAdmin", id = "__id__" })'
+                        .replace("__id__", stationId);
+                }
+            });
+        });
+    });
+</script>
+}

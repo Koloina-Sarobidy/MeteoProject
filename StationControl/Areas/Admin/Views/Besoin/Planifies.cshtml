@@ -1,0 +1,238 @@
+@using StationControl.Models.Besoin
+@model List<BesoinStation>
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Besoins";
+}
+
+<style>
+    table.table tbody tr.table-success:hover td {
+        background-color: var(--primary-light);
+        text-decoration: none;
+    }
+
+    tr.table-success {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+</style>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+}
+
+<div class="container-fluid py-4">
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Interventions
+            </h5>
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> Retour
+            </button>
+        </div>
+
+        <div class="card-body">
+
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Aucune intervention trouvée.
+                </div>
+            }
+            else
+            {
+                var grouped = Model.GroupBy(b => b.Station?.Nom ?? "Sans station");
+
+                foreach (var group in grouped)
+                {
+                    var stationName = group.Key;
+                    var stationId = group.First().Station?.Id ?? 0;
+
+                    <!-- FORMULAIRE -->
+                    <form method="post" action="@Url.Action("Planifier", "Besoin", new { area = "Admin" })">
+                        <input type="hidden" name="StationId" value="@stationId" />
+
+                        <div class="card card-primary-custom mb-3">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between">
+                                <span>
+                                    <i class="bi bi-building"></i>
+                                    @stationName
+                                </span>
+
+                                <button type="button" class="btn btn-light btn-sm"
+                                        onclick="document.getElementById('form-@stationId').classList.remove('d-none')">
+                                    <i class="bi bi-calendar-check"></i> Planifier
+                                </button>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="5%">
+                                                    <input type="checkbox" onclick="toggleAll(@stationId)" />
+                                                </th>
+                                                <th width="15%">Équipement</th>
+                                                <th width="20%">Besoin</th>
+                                                <th width="45%">Description</th>
+                                                <th width="15%">Statut</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var besoin in group)
+                                            {
+                                                if (besoin.EstTraite)
+                                                {
+                                                    <tr class="table-success" style="cursor:pointer;" 
+                                                        onclick="window.location.href='@Url.Action("Details", "Besoin", new { id = besoin.Id })'">
+                                                        <td></td> 
+                                                        <td>
+                                                            @(besoin.AlimentationStation?.Alimentation.Libelle ?? besoin.CapteurStation?.Capteur.Libelle ?? "-")
+                                                            (@(besoin.AlimentationStation?.NumSerie ?? besoin.CapteurStation?.NumSerie))
+                                                        </td>
+                                                        <td>@(besoin.EquipementBesoin?.Libelle ?? "-")</td>
+                                                        <td>@besoin.DescriptionProbleme</td>
+                                                        <td>
+                                                            <span class="badge bg-success">Traité</span>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                else
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <input type="checkbox"
+                                                                   name="SelectedBesoins"
+                                                                   class="besoin-@stationId"
+                                                                   value="@besoin.Id" />
+                                                        </td>
+                                                        <td>
+                                                            @(besoin.AlimentationStation?.Alimentation.Libelle ?? besoin.CapteurStation?.Capteur.Libelle ?? "-")
+                                                            (@(besoin.AlimentationStation?.NumSerie ?? besoin.CapteurStation?.NumSerie))
+                                                        </td>
+                                                        <td>@(besoin.EquipementBesoin?.Libelle ?? "-")</td>
+                                                        <td>@besoin.DescriptionProbleme</td>
+                                                        <td>
+                                                            <span class="badge bg-warning text-dark">Non traité</span>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div id="form-@stationId" class="bg-light p-3 border rounded mt-3 d-none">
+                                    <div id="error-@stationId" class="alert alert-danger d-none mb-3">
+                                        Veuillez sélectionner au moins un besoin.
+                                    </div>
+
+                                    <h6 class="text-primary mb-3">Planification d'intervention</h6>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label>Date prévue début</label>
+                                            <input type="date" class="form-control" name="DateDebut" required />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label>Date prévue fin</label>
+                                            <input type="date" class="form-control" name="DateFin" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label>Technicien</label>
+                                            <input type="text" class="form-control" name="Technicien" required />
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="bi bi-x-circle"></i> Annuler
+                                    </button>
+                                    <button type="button" class="btn btn-primary"
+                                            onclick="openConfirmModal(@stationId)">
+                                        <i class="bi bi-check-circle"></i> Valider
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <!-- FIN FORMULAIRE -->
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary"><i class="bi bi-exclamation-triangle"></i> Confirmer la planification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                Confirmer l’enregistrement de cette planification ?
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </button>
+                <button id="btn-confirm-submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let activeStationForm = null;
+
+    function openConfirmModal(stationId) {
+        const errorBox = document.getElementById("error-" + stationId);
+        const selected = document.querySelectorAll(".besoin-" + stationId + ":checked");
+
+        if (selected.length === 0) {
+            errorBox.classList.remove("d-none");
+            return;
+        }
+
+        errorBox.classList.add("d-none");
+
+        activeStationForm = document.querySelector("form input[value='" + stationId + "']").closest("form");
+
+        const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+        modal.show();
+    }
+
+    document.getElementById("btn-confirm-submit").onclick = function () {
+        if (activeStationForm)
+            activeStationForm.submit();
+    }
+
+    function toggleAll(stationId) {
+        const boxes = document.querySelectorAll(".besoin-" + stationId);
+        const state = event.target.checked;
+        boxes.forEach(b => b.checked = state);
+    }
+</script>
+}

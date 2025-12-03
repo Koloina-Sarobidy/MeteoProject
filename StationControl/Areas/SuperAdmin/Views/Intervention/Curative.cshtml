@@ -1,0 +1,158 @@
+@using StationControl.Models.Intervention
+@using StationControl.Models.Station
+@{
+    Layout = "~/Areas/SuperAdmin/Views/Shared/_LayoutSuperAdmin.cshtml";
+    ViewData["Title"] = "Interventions par station";
+
+    int mois = ViewBag.Mois;
+    int annee = ViewBag.Annee;
+    int? stationId = ViewBag.StationId;
+    var interventions = ViewBag.Interventions as List<Intervention>;
+    var stations = ViewBag.Stations as List<Station>;
+    var selectedStatut = ViewBag.Statut as string;
+
+    if(stationId.HasValue)
+    {
+        interventions = interventions.Where(i => i.StationId == stationId.Value).ToList();
+    }
+    interventions = interventions
+        .Where(i => i.DatePlanifieeDebut.Month == mois && i.DatePlanifieeDebut.Year == annee)
+        .ToList();
+}
+
+<style>
+    tr.clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+
+    tr.clickable-row:hover {
+        background-color: #e2f0ff;
+        transform: scale(1.01);
+    }
+
+    tr.clickable-row td {
+        transition: color 0.2s;
+    }
+
+ 
+    .badge-status {
+        font-weight: 500;
+        padding: 0.35em 0.5em;
+    }
+</style>
+
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="bi bi-list-ul me-2"></i> Interventions curatives
+                @if(stationId.HasValue && stations != null)
+                {
+                    var stationName = stations.FirstOrDefault(s => s.Id == stationId.Value)?.Nom;
+                    if(!string.IsNullOrEmpty(stationName)){
+                        <span class="text-secondary">- @stationName</span>
+                    }
+                }
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label class="form-label">Station</label>
+                    <select name="stationId" class="form-select">
+                        <option value="">Toutes les stations</option>
+                        @foreach(var s in stations)
+                        {
+                            <option value="@s.Id" @(stationId == s.Id ? "selected" : "")>@s.Nom</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Statut</label>
+                    <select name="statut" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="Planifiée" @(selectedStatut=="Planifiée"?"selected":"")>Planifiée</option>
+                        <option value="En cours" @(selectedStatut=="En cours"?"selected":"")>En cours</option>
+                        <option value="Terminée" @(selectedStatut=="Terminée"?"selected":"")>Terminée</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Mois</label>
+                    <select name="mois" class="form-select">
+                        @for(int m=1; m<=12; m++){
+                            <option value="@m" @(m==mois?"selected":"")>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Année</label>
+                    <input type="number" name="annee" value="@annee" class="form-control" min="2020" max="2100" />
+                </div>
+                <div class="col-md-5 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                    <a href="@Url.Action("Curative", "Intervention", new { area = "SuperAdmin" })" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+
+           @foreach(var station in stations)
+            {
+                var stationInterventions = interventions
+                    .Where(i => i.StationId == station.Id)
+                    .OrderBy(i => i.DatePlanifieeDebut)
+                    .ToList();
+
+                if(stationInterventions.Count == 0) continue;
+
+                <h6 class="text-primary mt-3">@station.Nom</h6>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Statut</th>
+                                <th>Date Planifiée Début</th>
+                                <th>Date Planifiée Fin</th>
+                                <th>Date Effective Début</th>
+                                <th>Date Effective Fin</th>
+                                <th>Technicien Planifié</th>
+                                <th>Technicien Effectif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var intervention in stationInterventions)
+                            {
+                                string badgeClass = intervention.Statut switch
+                                {
+                                    "Planifiée" => "bg-secondary text-dark",
+                                    "En cours" => "bg-warning text-dark",
+                                    "Terminée" => "bg-success text-white",
+                                    _ => "bg-secondary text-dark"
+                                };
+
+                                int besoinId = intervention.BesoinStationId ?? 0;
+
+                                <tr class="clickable-row" onclick="location.href='@Url.Action("Details", "Intervention", new { area="SuperAdmin", id = besoinId })'">
+                                    <td><span class="badge @badgeClass">@intervention.Statut</span></td>
+                                    <td>@intervention.DatePlanifieeDebut.ToString("dd/MM/yyyy")</td>
+                                    <td>@intervention.DatePlanifieeFin?.ToString("dd/MM/yyyy")</td>
+                                    <td>@intervention.DateEffectiveDebut?.ToString("dd/MM/yyyy")</td>
+                                    <td>@intervention.DateEffectiveFin?.ToString("dd/MM/yyyy")</td>
+                                    <td>@intervention.TechnicienPlanifie</td>
+                                    <td>@intervention.TechnicienEffectif</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
