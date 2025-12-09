@@ -23,25 +23,30 @@ Construit l’image web pour l’application ASP.NET Core MVC
 Utilise l’image mariadb:11.8 pour la base de données
 
 ## 4️⃣ Lancer les conteneurs
-- docker-compose up -d
+- docker compose up -d
 Ports exposés :
-    - Application MVC : http://localhost:5000
-    - Base de données MariaDB : localhost:3306
+    - Application MVC : http://localhost:8000
+    - Base de données MariaDB : localhost:3308:3306
 
 ## 5️⃣ Vérifier les conteneurs
 - docker ps
 
 ## 6️⃣ Accéder à l’application
 Ouvre ton navigateur et va sur :
-http://localhost:5000
+Local: http://localhost:8000
+En ligne: https://overrudely-malodorous-stephani.ngrok-free.dev
 
 
 ## Acceder a la base de donnees
-mysql -h 127.0.0.1 -P 3306 -u myuser -p
-- mot de passe: myuserpassword
+Via docker: docker exec -it mariadb_db mariadb -h 127.0.0.1 -u root -p
+Local: mysql -h 127.0.0.1 -P 3308 -u root -p
+- mot de passe: root
 
 ## Email de test de l'app
 - Email = girlspower434@gmail.com
 - Mot de passe d'application = sjgu swux jdhb ghld
 
 
+## Lancer ngrok
+ngrok http --region=eu 8000
+Lien: https://overrudely-malodorous-stephani.ngrok-free.dev

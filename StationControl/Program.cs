@@ -4,6 +4,8 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -22,5 +24,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.Urls.Add("http://localhost:8000");
+app.Urls.Add("http://0.0.0.0:8000");
 app.Run();

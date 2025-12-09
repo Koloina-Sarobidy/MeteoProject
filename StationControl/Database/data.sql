@@ -41,8 +41,8 @@ INSERT INTO region (id, nom) VALUES
 
 -- Type Station
 INSERT INTO type_station(libelle) VALUES
-('Synoptique'),
-('Agrométéorologique');
+('SYNOPTIQUE'),
+('AGROMETEOROLOGIQUE');
 
 -- Equipement Besoin
 INSERT INTO equipement_besoin (libelle) VALUES
